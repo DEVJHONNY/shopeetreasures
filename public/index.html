@@ -2249,12 +2249,6 @@
     let currentSlide = 0;
     let slideTimer = null;
 
-    const fallbackSvgImg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Crect width='400' height='400' fill='%23f1f5f9'/%3E%3Cg fill='%2394a3b8' text-anchor='middle' font-family='sans-serif'%3E%3Ccircle cx='200' cy='180' r='36' fill='%23cbd5e1'/%3E%3Cpath d='M150 250 L250 250 L200 190 Z' fill='%2394a3b8'/%3E%3Ctext x='200' y='290' font-size='14' font-weight='600'%3EOferta Shopee%3C/text%3E%3C/g%3E%3C/svg%3E";
-
-    function handleImgError(img) {
-      img.onerror = null;
-      img.src = fallbackSvgImg;
-    }
 
     document.addEventListener('DOMContentLoaded', () => {
       checkLgpdConsent();
