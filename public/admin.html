@@ -1,0 +1,1176 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel do Afiliado | Shopee Brasil</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    :root {
+      --primary: #ee4d2d;
+      --primary-hover: #d03b1e;
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --success: #10b981;
+      --radius: 3px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Roboto', sans-serif;
+      min-height: 100vh;
+    }
+
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 700;
+      font-size: 1.15rem;
+      color: var(--primary);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 0 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    .stat-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.35rem;
+    }
+    .icon-orange { background: #fff5f3; color: var(--primary); }
+    .icon-green { background: #ecfdf5; color: var(--success); }
+    .icon-blue { background: #eff6ff; color: #2563eb; }
+
+    .stat-val {
+      font-size: 1.7rem;
+      font-weight: 700;
+      line-height: 1.1;
+    }
+    .stat-label {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.25rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    label {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #334155;
+    }
+
+    input, select {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      padding: 0.65rem 0.85rem;
+      font-family: inherit;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .btn {
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: 500;
+      font-size: 0.88rem;
+      padding: 0.65rem 1.25rem;
+      border-radius: 2px;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+    .btn-primary:hover {
+      background: var(--primary-hover);
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .btn-outline:hover {
+      background: #f1f5f9;
+    }
+
+    .table-responsive {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.88rem;
+    }
+
+    th {
+      background: #f8fafc;
+      padding: 0.85rem 1rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      border-bottom: 2px solid var(--border);
+    }
+
+    td {
+      padding: 0.9rem 1rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+
+    .prod-mini {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+    .prod-mini img {
+      width: 44px;
+      height: 44px;
+      border-radius: 2px;
+      object-fit: cover;
+      border: 1px solid var(--border);
+    }
+
+    .badge-status {
+      background: #ecfdf5;
+      color: var(--success);
+      font-weight: 700;
+      padding: 0.2rem 0.55rem;
+      border-radius: 2px;
+      font-size: 0.8rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .login-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .login-card {
+      background: white;
+      border-radius: 4px;
+      padding: 2.5rem;
+      max-width: 400px;
+      width: 90%;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+      text-align: center;
+    }
+
+    .api-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: #ecfdf5;
+      color: #065f46;
+      border: 1px solid #a7f3d0;
+      font-size: 0.78rem;
+      font-weight: 500;
+      padding: 0.25rem 0.65rem;
+      border-radius: 2px;
+    }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <!-- Modal Login -->
+  <div id="loginModal" class="login-overlay">
+    <div class="login-card">
+      <div style="font-size: 2.5rem; margin-bottom: 0.8rem; color: var(--primary);">
+        <i class="fa-solid fa-lock"></i>
+      </div>
+      <h2 style="font-weight: 700; font-size: 1.3rem; margin-bottom: 0.5rem;">Acesso Administrativo</h2>
+      <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 1.5rem;">
+        Insira sua senha para gerenciar a vitrine.
+      </p>
+
+      <form id="loginForm" onsubmit="handleLogin(event)">
+        <div class="form-group" style="text-align: left; margin-bottom: 1.25rem;">
+          <label>Senha:</label>
+          <input type="password" id="loginPassword" placeholder="Digite sua senha de acesso" required autofocus>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">
+          Entrar no Painel
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <header>
+    <div class="brand">
+      <i class="fa-solid fa-gem"></i>
+      <span>ShopeeTreasures | Gestão de Afiliado</span>
+      <span class="api-badge"><i class="fa-solid fa-check"></i> API Shopee Conectada</span>
+    </div>
+    <div style="display: flex; gap: 0.75rem;">
+      <a href="/" target="_blank" class="btn btn-outline" style="font-size: 0.85rem; padding: 0.4rem 0.8rem;">
+        <i class="fa-solid fa-eye"></i> Ver Vitrine
+      </a>
+      <button onclick="logout()" class="btn btn-outline" style="font-size: 0.85rem; padding: 0.4rem 0.8rem; color: #ef4444;">
+        Sair
+      </button>
+    </div>
+  </header>
+
+  <div class="container" id="adminContent">
+    <!-- Métricas -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon icon-orange">
+          <i class="fa-solid fa-box-archive"></i>
+        </div>
+        <div>
+          <div class="stat-val" id="statProducts">0</div>
+          <div class="stat-label">Produtos na Vitrine</div>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon icon-green">
+          <i class="fa-solid fa-mouse-pointer"></i>
+        </div>
+        <div>
+          <div class="stat-val" id="statClicks">0</div>
+          <div class="stat-label">Cliques de Afiliado Gerados</div>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon icon-blue">
+          <i class="fa-solid fa-clock-rotate-left"></i>
+        </div>
+        <div>
+          <div class="stat-val" style="font-size: 1.15rem; color: #2563eb;" id="statNextSync">Calculando...</div>
+          <div class="stat-label">Próxima Atualização Automática</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAINEL AUTO-CRON (ATUALIZAÇÃO EM SEGUNDO PLANO) -->
+    <div class="panel" style="border-left: 4px solid var(--primary);">
+      <div class="panel-header">
+        <div class="panel-title">
+          <i class="fa-solid fa-clock" style="color: var(--primary);"></i>
+          Atualização Automática em Segundo Plano (Auto-Cron)
+        </div>
+        <span class="badge-status" id="cronStatusBadge">
+          <i class="fa-solid fa-circle-dot"></i> Ativo no Sistema
+        </span>
+      </div>
+
+      <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+        O servidor busca novas ofertas virais e atualiza os preços e estoques diretamente da API da Shopee sem nenhuma necessidade de intervenção manual.
+      </p>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 1rem; align-items: flex-end;">
+        <div class="form-group">
+          <label>Frequência da Atualização Automática:</label>
+          <select id="cronInterval" onchange="updateCronConfig()">
+            <option value="3">A cada 3 horas</option>
+            <option value="6" selected>A cada 6 horas (Recomendado)</option>
+            <option value="12">A cada 12 horas</option>
+            <option value="24">A cada 24 horas (Diariamente)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Última Sincronização:</label>
+          <input type="text" id="cronLastSyncText" value="Nenhuma ainda" readonly style="background: #f1f5f9; color: #475569;">
+        </div>
+
+        <button id="btnManualCron" class="btn btn-primary" onclick="triggerManualSync()" style="height: 38px;">
+          <i class="fa-solid fa-rotate"></i>
+          <span>Atualizar Agora</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- CONFIGURAÇÃO DO GRUPO VIP WHATSAPP & LANDING PAGE -->
+    <div class="panel" style="border-left: 4px solid var(--primary);">
+      <div class="panel-header">
+        <div class="panel-title">
+          <i class="fa-solid fa-crown" style="color: var(--primary);"></i>
+          Configuração do Grupo VIP WhatsApp & Landing Page (/vip)
+        </div>
+        <a href="/vip" target="_blank" class="btn btn-outline" style="font-size: 0.8rem; padding: 0.35rem 0.75rem;">
+          <i class="fa-solid fa-arrow-up-right-from-square"></i> Ver Landing Page VIP
+        </a>
+      </div>
+
+      <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1rem;">
+        Cole aqui o link de convite do seu grupo do WhatsApp (ex: <code>https://chat.whatsapp.com/SeuCodigo</code>). Esse link será usado automaticamente em todos os botões da Landing Page VIP e da vitrine.
+      </p>
+
+      <div style="display: flex; gap: 0.75rem; align-items: flex-end;">
+        <div class="form-group" style="flex: 1; margin: 0;">
+          <label>Link Oficial de Convite do Grupo WhatsApp:</label>
+          <input type="url" id="inputWhatsappGroupLink" placeholder="https://chat.whatsapp.com/..." style="font-size: 0.9rem;">
+        </div>
+        <button class="btn btn-primary" onclick="saveWhatsappGroupLink()" style="height: 38px; white-space: nowrap;">
+          <i class="fa-solid fa-floppy-disk"></i>
+          <span>Salvar Link</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ROBÔ DE OFERTAS WHATSAPP (AVALIAÇÃO 4.8+ E DESCONTOS 30%+) -->
+    <div class="panel" style="border-left: 4px solid #25d366;">
+      <div class="panel-header">
+        <div class="panel-title">
+          <i class="fa-brands fa-whatsapp" style="color: #25d366; font-size: 1.25rem;"></i>
+          Robô de Promoções WhatsApp (Avaliação 4.8+ & Descontos 30%+)
+        </div>
+        <button id="btnGeneratePromo" class="btn btn-primary" style="background: #25d366; border: none;" onclick="triggerPromoBot()">
+          <i class="fa-solid fa-bolt"></i>
+          <span>Gerar Novas Promoções</span>
+        </button>
+      </div>
+
+      <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1rem;">
+        O robô varre a Shopee Open API buscando apenas produtos com avaliação 4.8 ou superior e descontos de até 85%, calculando a economia e formatando as mensagens com seu link de afiliado prontas para disparo.
+      </p>
+
+      <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; margin-bottom: 1rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+          <strong style="font-size: 0.88rem; color: #0f172a;"><i class="fa-solid fa-list-check"></i> Resumo do Grupo VIP (Digest Top 10):</strong>
+          <button class="btn btn-outline" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;" onclick="copyPromoDigest()">
+            <i class="fa-solid fa-copy"></i> Copiar Mensagem Completa
+          </button>
+        </div>
+        <textarea id="promoDigestText" readonly style="width: 100%; height: 160px; font-family: monospace; font-size: 0.82rem; border: 1px solid #cbd5e1; border-radius: 3px; padding: 0.75rem; background: #ffffff; color: #334155; resize: vertical;"></textarea>
+      </div>
+
+      <div id="promoCardsContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0.75rem;">
+        <!-- Preenchido via JavaScript -->
+      </div>
+    </div>
+
+    <!-- ROBÔ DE DISPARO 100% AUTOMÁTICO WHATSAPP (BAILEYS / QR CODE) -->
+    <div class="panel" style="border-left: 4px solid #10b981;">
+      <div class="panel-header">
+        <div class="panel-title">
+          <i class="fa-solid fa-robot" style="color: #10b981; font-size: 1.25rem;"></i>
+          Robô de Disparo 100% Automático no WhatsApp (Opção 2)
+        </div>
+        <div id="waStatusBadge" style="display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; font-weight: 700; padding: 0.35rem 0.75rem; border-radius: 9999px; background: #f1f5f9; color: #64748b;">
+          <span style="width: 8px; height: 8px; border-radius: 50%; background: #94a3b8;"></span> Desconectado
+        </div>
+      </div>
+
+      <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+        Conecte seu WhatsApp lendo o QR Code abaixo uma única vez. Com o robô conectado, as ofertas serão enviadas <b>100% sozinhas diretamente dentro do seu grupo</b> com foto, desconto e seu link oficial.
+      </p>
+
+      <!-- QR Code / Connection Box -->
+      <div id="waConnectBox" style="background: #f8fafc; border: 1.5px dashed #cbd5e1; border-radius: var(--radius); padding: 1.5rem; text-align: center; margin-bottom: 1.5rem;">
+        <div id="waQrPrompt">
+          <p style="font-size: 0.9rem; font-weight: 600; color: #1e293b; margin-bottom: 0.75rem;">
+            Conectar seu WhatsApp para Disparo Automático:
+          </p>
+          <button class="btn btn-primary" style="background: #10b981; border: none; font-size: 0.9rem; padding: 0.6rem 1.25rem;" onclick="connectWhatsAppBot()">
+            <i class="fa-solid fa-qrcode"></i>
+            <span>Gerar QR Code de Conexão</span>
+          </button>
+        </div>
+
+        <div id="waQrDisplay" style="display: none;">
+          <p style="font-size: 0.85rem; color: #475569; margin-bottom: 0.75rem;">
+            Abra o WhatsApp no celular ➔ Toque em <b>Aparelhos conectados</b> ➔ <b>Conectar um aparelho</b> e aponte para o QR Code:
+          </p>
+          <div style="background: #ffffff; display: inline-block; padding: 12px; border-radius: 12px; box-shadow: 0 4px 14px rgba(0,0,0,0.1); margin-bottom: 0.75rem;">
+            <img id="waQrImage" src="" alt="QR Code WhatsApp" style="width: 240px; height: 240px; display: block;">
+          </div>
+          <div>
+            <button class="btn btn-outline" style="font-size: 0.8rem; padding: 0.35rem 0.75rem;" onclick="connectWhatsAppBot()">
+              <i class="fa-solid fa-rotate"></i> Atualizar QR Code
+            </button>
+          </div>
+        </div>
+
+        <div id="waConnectedDisplay" style="display: none;">
+          <div style="display: flex; align-items: center; justify-content: center; gap: 0.75rem; color: #15803d; font-weight: 700; font-size: 1rem; margin-bottom: 0.5rem;">
+            <i class="fa-solid fa-circle-check" style="font-size: 1.4rem;"></i>
+            <span id="waConnectedInfo">Conectado ao WhatsApp com Sucesso!</span>
+          </div>
+          <p style="font-size: 0.82rem; color: #64748b; margin-bottom: 1rem;">
+            O robô está pronto para postar ofertas no grupo sem você precisar clicar em nada.
+          </p>
+          <button class="btn btn-outline" style="color: #ef4444; border-color: #fca5a5; font-size: 0.8rem; padding: 0.35rem 0.75rem;" onclick="disconnectWhatsAppBot()">
+            <i class="fa-solid fa-power-off"></i> Desconectar Sessão
+          </button>
+        </div>
+      </div>
+
+      <!-- Schedule & Automation Controls -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; align-items: flex-end; margin-bottom: 1.25rem;">
+        <div class="form-group" style="margin: 0;">
+          <label>Intervalo entre os Envios:</label>
+          <select id="waAutoInterval" onchange="updateWhatsAppConfig()">
+            <option value="30">A cada 30 minutos (Modo Acelerado)</option>
+            <option value="60" selected>A cada 1 hora (Recomendado - Anti-spam)</option>
+            <option value="120">A cada 2 horas (Discreto)</option>
+            <option value="240">A cada 4 horas</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="margin: 0;">
+          <label>Status do Disparo Automático:</label>
+          <select id="waAutoEnabled" onchange="updateWhatsAppConfig()" style="font-weight: 700;">
+            <option value="0">⏸️ Pausado (Envio Manual Apenas)</option>
+            <option value="1">▶️ Ativado (Robô posta sozinho)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Live Dispatched Feed -->
+      <div style="background: #ffffff; border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem;">
+        <strong style="font-size: 0.85rem; color: #0f172a; display: block; margin-bottom: 0.5rem;">
+          <i class="fa-solid fa-clock-rotate-left"></i> Histórico de Ofertas Enviadas pelo Robô no Grupo:
+        </strong>
+        <div id="waDispatchedList" style="font-size: 0.82rem; color: #475569;">
+          <div style="padding: 0.5rem; text-align: center; color: #94a3b8;">Nenhum disparo registrado ainda nesta sessão.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Conversor de Links -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <i class="fa-solid fa-link" style="color: var(--primary);"></i>
+          Gerador de Link de Afiliado (Qualquer produto da Shopee)
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: flex-end;">
+        <div class="form-group">
+          <label>Cole o link de qualquer produto da Shopee:</label>
+          <input type="url" id="convertInput" placeholder="https://shopee.com.br/produto...">
+        </div>
+        <button id="btnConvert" class="btn btn-outline" onclick="convertLink()" style="height: 38px;">
+          <span>Gerar Link Rastreado</span>
+        </button>
+      </div>
+      <div id="convertedResult" style="margin-top: 0.75rem; font-size: 0.88rem; display: none;"></div>
+    </div>
+
+    <!-- Tabela de Produtos -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <i class="fa-solid fa-list" style="color: var(--primary);"></i>
+          Produtos Ativos na Vitrine
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Produto</th>
+              <th>Categoria</th>
+              <th>Preço</th>
+              <th>Cliques</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="productsTableBody">
+            <tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Carregando produtos...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // API Base URL — agora hospedado 100% na Netlify via Netlify Functions
+    const API_BASE = '';
+
+    let authToken = localStorage.getItem('shopee_admin_token');
+
+    function checkAuth() {
+      if (!authToken) {
+        document.getElementById('loginModal').classList.remove('hidden');
+      } else {
+        document.getElementById('loginModal').classList.add('hidden');
+        loadAdminData();
+        loadCronStatus();
+        loadPromoData();
+        loadWhatsappGroupConfig();
+        loadWhatsAppBotStatus();
+      }
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const pwd = document.getElementById('loginPassword').value;
+
+      try {
+        const res = await fetch(API_BASE + '/api/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: pwd })
+        });
+        const data = await res.json();
+        if (data.success) {
+          authToken = data.token;
+          localStorage.setItem('shopee_admin_token', authToken);
+          document.getElementById('loginModal').classList.add('hidden');
+          loadAdminData();
+          loadCronStatus();
+          loadPromoData();
+          loadWhatsappGroupConfig();
+          loadWhatsAppBotStatus();
+        } else {
+          alert('Senha incorreta.');
+        }
+      } catch (err) {
+        alert('Erro: ' + err.message);
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('shopee_admin_token');
+      authToken = null;
+      checkAuth();
+    }
+
+    async function loadCronStatus() {
+      try {
+        const res = await fetch(API_BASE + '/api/admin/cron-status', {
+          headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        if (!res.ok) return;
+        const status = await res.json();
+
+        document.getElementById('cronInterval').value = status.intervalHours || 6;
+        
+        if (status.lastSync) {
+          const date = new Date(status.lastSync);
+          document.getElementById('cronLastSyncText').value = `${date.toLocaleDateString('pt-BR')} às ${date.toLocaleTimeString('pt-BR')}`;
+        }
+
+        if (status.nextSync) {
+          const nextDate = new Date(status.nextSync);
+          document.getElementById('statNextSync').textContent = nextDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        } else {
+          document.getElementById('statNextSync').textContent = 'Agendado';
+        }
+      } catch (e) {
+        console.error('Erro ao carregar status do Cron:', e);
+      }
+    }
+
+    async function updateCronConfig() {
+      const hours = document.getElementById('cronInterval').value;
+      try {
+        await fetch(API_BASE + '/api/admin/cron-config', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+          },
+          body: JSON.stringify({ intervalHours: hours, enabled: true })
+        });
+        loadCronStatus();
+      } catch (e) {
+        alert('Erro ao atualizar intervalo: ' + e.message);
+      }
+    }
+
+    async function loadWhatsappGroupConfig() {
+      try {
+        const res = await fetch(API_BASE + '/api/settings');
+        if (res.ok) {
+          const s = await res.json();
+          if (s.whatsapp_link) {
+            document.getElementById('inputWhatsappGroupLink').value = s.whatsapp_link;
+          }
+        }
+      } catch (e) {}
+    }
+
+    async function saveWhatsappGroupLink() {
+      const link = document.getElementById('inputWhatsappGroupLink').value.trim();
+      if (!link) {
+        alert('Por favor, informe o link do grupo do WhatsApp.');
+        return;
+      }
+      try {
+        const res = await fetch(API_BASE + '/api/settings', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + authToken
+          },
+          body: JSON.stringify({ whatsapp_link: link })
+        });
+        if (res.ok) {
+          alert('✅ Link do Grupo VIP salvo com sucesso!\n\nTodos os botões da página /vip e da vitrine já foram atualizados.');
+        } else {
+          alert('Erro ao salvar link. Verifique se está autenticado.');
+        }
+      } catch (e) {
+        alert('Erro de conexão ao salvar link.');
+      }
+    }
+
+    // ==========================================
+    // ROBÔ AUTOMÁTICO WHATSAPP (BAILEYS)
+    // ==========================================
+    let waPollTimer = null;
+
+    async function loadWhatsAppBotStatus() {
+      if (!authToken) return;
+      try {
+        const res = await fetch(API_BASE + '/api/admin/whatsapp/status', {
+          headers: { 'Authorization': 'Bearer ' + authToken }
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+
+        const badge = document.getElementById('waStatusBadge');
+        const promptBox = document.getElementById('waQrPrompt');
+        const qrDisplay = document.getElementById('waQrDisplay');
+        const connectedDisplay = document.getElementById('waConnectedDisplay');
+        const qrImg = document.getElementById('waQrImage');
+        const connInfo = document.getElementById('waConnectedInfo');
+
+        // Update Auto-post form fields
+        if (document.getElementById('waAutoInterval')) {
+          document.getElementById('waAutoInterval').value = data.intervalMinutes || 60;
+        }
+        if (document.getElementById('waAutoEnabled')) {
+          document.getElementById('waAutoEnabled').value = data.isAutoPostEnabled ? '1' : '0';
+        }
+
+        if (data.status === 'connected') {
+          badge.style.background = '#dcfce7';
+          badge.style.color = '#15803d';
+          badge.innerHTML = `<span style="width: 8px; height: 8px; border-radius: 50%; background: #22c55e;"></span> Conectado (${data.user?.name || 'WhatsApp'})`;
+
+          promptBox.style.display = 'none';
+          qrDisplay.style.display = 'none';
+          connectedDisplay.style.display = 'block';
+          connInfo.textContent = `Conectado como: ${data.user?.name || data.user?.id || 'Aparelho Conectado'}`;
+        } else if (data.status === 'qr_ready' && data.qrCode) {
+          badge.style.background = '#fef9c3';
+          badge.style.color = '#854d0e';
+          badge.innerHTML = `<span style="width: 8px; height: 8px; border-radius: 50%; background: #eab308;"></span> Aguardando Leitura do QR Code`;
+
+          promptBox.style.display = 'none';
+          qrDisplay.style.display = 'block';
+          connectedDisplay.style.display = 'none';
+          qrImg.src = data.qrCode;
+        } else if (data.status === 'connecting') {
+          badge.style.background = '#f1f5f9';
+          badge.style.color = '#475569';
+          badge.innerHTML = `<span style="width: 8px; height: 8px; border-radius: 50%; background: #3b82f6;"></span> Conectando...`;
+
+          promptBox.style.display = 'block';
+          qrDisplay.style.display = 'none';
+          connectedDisplay.style.display = 'none';
+        } else {
+          badge.style.background = '#f1f5f9';
+          badge.style.color = '#64748b';
+          badge.innerHTML = `<span style="width: 8px; height: 8px; border-radius: 50%; background: #94a3b8;"></span> Desconectado`;
+
+          promptBox.style.display = 'block';
+          qrDisplay.style.display = 'none';
+          connectedDisplay.style.display = 'none';
+        }
+
+        // Render dispatched history
+        const listEl = document.getElementById('waDispatchedList');
+        if (data.dispatchedLog && data.dispatchedLog.length > 0) {
+          listEl.innerHTML = data.dispatchedLog.map(item => `
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.45rem 0.6rem; border-bottom: 1px solid #f1f5f9; gap: 0.5rem;">
+              <div style="flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                <span style="color: #22c55e; font-weight: 700;">✓</span> <strong>${escapeHtml(item.title)}</strong>
+              </div>
+              <div style="font-weight: 700; color: #ee4d2d; font-size: 0.8rem; white-space: nowrap;">
+                R$ ${parseFloat(item.price || 0).toFixed(2).replace('.', ',')}
+              </div>
+              <div style="font-size: 0.72rem; color: #94a3b8; white-space: nowrap;">
+                ${new Date(item.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+              </div>
+            </div>
+          `).join('');
+        }
+      } catch (err) {
+        console.warn('Erro ao checar status do WhatsApp Bot:', err);
+      }
+    }
+
+    async function connectWhatsAppBot() {
+      try {
+        const res = await fetch(API_BASE + '/api/admin/whatsapp/connect', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + authToken }
+        });
+        const data = await res.json();
+        if (data.success) {
+          loadWhatsAppBotStatus();
+          if (waPollTimer) clearInterval(waPollTimer);
+          waPollTimer = setInterval(loadWhatsAppBotStatus, 3000);
+        }
+      } catch (e) {
+        alert('Erro ao iniciar conexão: ' + e.message);
+      }
+    }
+
+    async function disconnectWhatsAppBot() {
+      if (!confirm('Deseja realmente desconectar a sessão do WhatsApp?')) return;
+      try {
+        const res = await fetch(API_BASE + '/api/admin/whatsapp/disconnect', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + authToken }
+        });
+        if (waPollTimer) clearInterval(waPollTimer);
+        loadWhatsAppBotStatus();
+      } catch (e) {
+        alert('Erro ao desconectar: ' + e.message);
+      }
+    }
+
+    async function updateWhatsAppConfig() {
+      const interval = parseInt(document.getElementById('waAutoInterval').value, 10);
+      const enabled = document.getElementById('waAutoEnabled').value === '1';
+
+      try {
+        const res = await fetch(API_BASE + '/api/admin/whatsapp/config', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + authToken
+          },
+          body: JSON.stringify({ autoPostEnabled: enabled, intervalMinutes: interval })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert(`Configuração salva!\nDisparo automático: ${enabled ? 'ATIVADO' : 'PAUSADO'}\nIntervalo: a cada ${interval} minutos.`);
+          loadWhatsAppBotStatus();
+        }
+      } catch (e) {
+        alert('Erro ao atualizar configuração: ' + e.message);
+      }
+    }
+
+    // Enviar oferta específica selecionada pelo painel direto no grupo via robô
+    async function sendPromoToGroup(idx) {
+      if (!currentPromoData || !currentPromoData.products || !currentPromoData.products[idx]) {
+        alert('Nenhuma promoção carregada. Clique em "Gerar Novas Promoções" primeiro.');
+        return;
+      }
+
+      const product = currentPromoData.products[idx];
+
+      // Encontra o ID do produto no banco (pelo título)
+      try {
+        // Usa o promo_output para pegar o productId se disponível
+        const productId = product.id || product.itemId;
+
+        if (!productId) {
+          alert('❌ Produto sem ID de banco de dados. Gere as promoções novamente pelo botão "Gerar Novas Promoções".');
+          return;
+        }
+
+        if (!confirm(`Enviar esta oferta direto no grupo?\n\n📦 ${product.productName}\n💰 R$ ${product.priceCurrent ? product.priceCurrent.toFixed(2).replace('.', ',') : '?'}\n-${product.discountPct}% OFF`)) return;
+
+        const res = await fetch(API_BASE + '/api/admin/whatsapp/send-offer', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + authToken
+          },
+          body: JSON.stringify({ productId })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('✅ Oferta enviada com sucesso no grupo do WhatsApp!');
+          loadWhatsAppBotStatus();
+        } else {
+          alert('❌ Erro: ' + (data.error || 'Conecte o WhatsApp no painel primeiro.'));
+        }
+      } catch (e) {
+        alert('Erro ao enviar: ' + e.message);
+      }
+    }
+
+    async function triggerManualSync() {
+      const btn = document.getElementById('btnManualCron');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sincronizando...';
+
+      try {
+        const res = await fetch(API_BASE + '/api/admin/cron-trigger', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        const data = await res.json();
+        if (data.success) {
+          setTimeout(() => {
+            loadAdminData();
+            loadCronStatus();
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-rotate"></i> <span>Atualizar Agora</span>';
+            alert('Atualização em segundo plano executada com sucesso.');
+          }, 3500);
+        }
+      } catch (err) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-rotate"></i> <span>Atualizar Agora</span>';
+        alert('Erro ao sincronizar: ' + err.message);
+      }
+    }
+
+    async function loadAdminData() {
+      try {
+        const res = await fetch(API_BASE + '/api/admin/products', {
+          headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        if (res.status === 401 || res.status === 403) {
+          logout();
+          return;
+        }
+
+        const products = await res.json();
+        renderProductsTable(products);
+      } catch (e) {
+        console.error('Erro:', e);
+      }
+    }
+
+    function renderProductsTable(products) {
+      const tbody = document.getElementById('productsTableBody');
+      const totalClicks = products.reduce((acc, p) => acc + (p.clicks || 0), 0);
+      
+      document.getElementById('statProducts').textContent = products.length;
+      document.getElementById('statClicks').textContent = totalClicks;
+
+      if (products.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2rem;">Nenhum produto cadastrado.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = products.map(p => `
+        <tr>
+          <td>
+            <div class="prod-mini">
+              <img src="${p.image_url}" onerror="this.src='https://via.placeholder.com/50'">
+              <div>
+                <div style="font-weight: 500;">${p.title}</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">${p.sales_count || ''}</div>
+              </div>
+            </div>
+          </td>
+          <td><span style="font-size: 0.85rem; color: #475569;">${p.category}</span></td>
+          <td>
+            <span style="font-weight: 700; color: var(--primary);">R$ ${p.price_discount.toFixed(2).replace('.', ',')}</span>
+          </td>
+          <td>
+            <span class="badge-status">
+              <i class="fa-solid fa-arrow-pointer"></i> ${p.clicks || 0} cliques
+            </span>
+          </td>
+          <td>
+            <div style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
+              <button class="btn btn-outline" style="padding: 0.3rem 0.5rem; font-size: 0.75rem;" onclick="copyInternalLink(${p.id})" title="Copiar link da página de produto dentro do site">
+                <i class="fa-solid fa-file-lines"></i> Página Site
+              </button>
+              <button class="btn btn-outline" style="padding: 0.3rem 0.5rem; font-size: 0.75rem;" onclick="copyShortLink(${p.id})" title="Copiar link direto de afiliado">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i> Link Direto
+              </button>
+              <button class="btn btn-outline" style="padding: 0.3rem 0.5rem; font-size: 0.75rem; color: #ef4444;" onclick="deleteProduct(${p.id})" title="Excluir">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function convertLink() {
+      const input = document.getElementById('convertInput');
+      const resDiv = document.getElementById('convertedResult');
+      const btn = document.getElementById('btnConvert');
+      const url = input.value.trim();
+
+      if (!url) return alert('Insira uma URL da Shopee.');
+
+      btn.disabled = true;
+      btn.innerHTML = 'Gerando...';
+
+      try {
+        const res = await fetch(API_BASE + '/api/shopee/convert-link', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url })
+        });
+        const data = await res.json();
+        if (data.success) {
+          resDiv.style.display = 'block';
+          resDiv.innerHTML = `
+            <div style="background: #ecfdf5; border: 1px solid #a7f3d0; padding: 0.6rem 0.8rem; border-radius: 2px; display: flex; align-items: center; justify-content: space-between;">
+              <div>
+                <strong style="color: #065f46;">Link gerado:</strong>
+                <a href="${data.shortLink}" target="_blank" style="color: #059669; font-weight: 500; margin-left: 0.5rem;">${data.shortLink}</a>
+              </div>
+              <button class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.78rem;" onclick="navigator.clipboard.writeText('${data.shortLink}'); alert('Copiado.');">
+                Copiar
+              </button>
+            </div>
+          `;
+        } else {
+          alert('Erro: ' + (data.error || 'URL inválida.'));
+        }
+      } catch (err) {
+        alert('Erro: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span>Gerar Link Rastreado</span>';
+      }
+    }
+
+    async function deleteProduct(id) {
+      if (!confirm('Deseja remover este produto?')) return;
+      try {
+        const res = await fetch(API_BASE + `/api/admin/products/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        const data = await res.json();
+        if (data.success) loadAdminData();
+      } catch (err) {
+        alert('Erro: ' + err.message);
+      }
+    }
+
+    function copyShortLink(id) {
+      const link = window.location.origin + `/r/${id}`;
+      navigator.clipboard.writeText(link);
+      alert('Link direto de afiliado copiado: ' + link);
+    }
+
+    function copyInternalLink(id) {
+      const link = window.location.origin + `/produto/${id}`;
+      navigator.clipboard.writeText(link);
+      alert('Link da página interna copiado: ' + link);
+    }
+
+    let currentPromoData = null;
+
+    async function loadPromoData() {
+      try {
+        const res = await fetch(API_BASE + '/api/promo/latest?t=' + Date.now());
+        if (!res.ok) return;
+        currentPromoData = await res.json();
+        renderPromoSection(currentPromoData);
+      } catch (err) {
+        console.warn('Erro ao carregar promoções:', err);
+      }
+    }
+
+    function renderPromoSection(data) {
+      if (!data) return;
+      document.getElementById('promoDigestText').value = data.digest || '';
+
+      const container = document.getElementById('promoCardsContainer');
+      if (!data.products || data.products.length === 0) {
+        container.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem;">Nenhuma promoção gerada ainda. Clique no botão acima para buscar ofertas 4.8+ da Shopee.</div>';
+        return;
+      }
+
+      const hora = data.generated_at ? new Date(data.generated_at).toLocaleTimeString('pt-BR') : '';
+      const totalCount = data.products.length;
+
+      container.innerHTML = data.products.map((p, idx) => `
+        <div style="background: white; border: 1.5px solid var(--border); border-radius: var(--radius); padding: 0.85rem; display: flex; flex-direction: column; gap: 0.45rem; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+          <div style="display: flex; gap: 0.65rem; align-items: center;">
+            <img src="${p.imageUrl}" style="width: 55px; height: 55px; object-fit: cover; border-radius: 4px; flex-shrink: 0;" onerror="this.src='https://via.placeholder.com/55'">
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-weight: 700; font-size: 0.82rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(p.productName)}">${p.productName}</div>
+              <div style="font-size: 0.74rem; color: #16a34a; font-weight: 700;">-${p.discountPct}% OFF • ⭐ ${p.ratingStar} • 🔥 ${p.salesCount || 'Top Vendas'}</div>
+              <div style="font-size: 0.7rem; color: #64748b;">🏪 ${p.shopName || 'Loja Verificada'}</div>
+            </div>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: baseline; font-size: 0.85rem; margin-top: auto; padding-top: 0.4rem; border-top: 1px dashed var(--border);">
+            <span style="font-weight: 800; color: var(--primary); font-size: 0.95rem;">R$ ${p.priceCurrent.toFixed(2).replace('.', ',')}</span>
+            <span style="font-size: 0.74rem; color: #15803d; font-weight: 700;">Economia: R$ ${p.savings.toFixed(2).replace('.', ',')}</span>
+          </div>
+          <div style="display: flex; gap: 0.4rem; margin-top: 0.35rem;">
+            <button class="btn btn-outline" style="flex: 1; padding: 0.4rem; font-size: 0.76rem; font-weight: 600;" onclick="copySinglePromo(${idx})" title="Copiar mensagem com texto, preço e link">
+              <i class="fa-solid fa-copy"></i> Copiar Msg
+            </button>
+            <button class="btn btn-outline" style="padding: 0.4rem 0.65rem; font-size: 0.76rem; font-weight: 600; color: #ee4d2d; border-color: #ffd8cc;" onclick="copyShopeeDirectLink('${p.offerLink}')" title="Copiar link oficial da Shopee (ao colar gera foto)">
+              <i class="fa-solid fa-link"></i> Link
+            </button>
+            <button class="btn btn-primary" style="background: #25d366; border: none; padding: 0.4rem 0.65rem; font-size: 0.76rem; font-weight: 700;" onclick="sendPromoToGroup(${idx})" title="Enviar esta oferta direto no grupo pelo robô">
+              <i class="fa-brands fa-whatsapp"></i> Enviar no Grupo
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function copyShopeeDirectLink(link) {
+      if (!link) return alert('Link não disponível.');
+      navigator.clipboard.writeText(link).then(() => {
+        alert('✅ Link oficial da Shopee copiado com sucesso!\n\nAo colar no WhatsApp ou redes sociais, a foto, nome da loja e detalhes do produto aparecem automaticamente.');
+      }).catch(() => {
+        prompt('Copie o seu link oficial da Shopee:', link);
+      });
+    }
+
+    async function triggerPromoBot() {
+      const btn = document.getElementById('btnGeneratePromo');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Buscando Novas Ofertas 4.8+...';
+
+      try {
+        const res = await fetch(API_BASE + '/api/promo/generate?t=' + Date.now(), { method: 'POST' });
+        const data = await res.json();
+        if (data.success || data.products) {
+          currentPromoData = data;
+          renderPromoSection(data);
+          loadAdminData();
+          alert(`✅ Sucesso! ${data.total_products || data.products.length} novas ofertas reais (avaliação 4.8+ e descontos de até 85%) foram obtidas na Shopee Open API e formatadas.`);
+        } else {
+          alert('Aviso: ' + (data.error || 'Nenhum resultado retornado.'));
+        }
+      } catch (err) {
+        alert('Erro ao rodar robô: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-bolt"></i> <span>Gerar Novas Promoções</span>';
+      }
+    }
+
+    function copyPromoDigest() {
+      const text = document.getElementById('promoDigestText').value;
+      if (!text) return alert('Nenhum digest disponível.');
+      navigator.clipboard.writeText(text);
+      alert('Resumo TOP 10 copiado com sucesso! Pode colar no seu grupo do WhatsApp.');
+    }
+
+    function copySinglePromo(idx) {
+      if (!currentPromoData || !currentPromoData.individual_messages || !currentPromoData.individual_messages[idx]) return;
+      navigator.clipboard.writeText(currentPromoData.individual_messages[idx]);
+      alert('Mensagem formatada com foto e link copiada para a área de transferência!');
+    }
+
+    window.addEventListener('load', checkAuth);
+  </script>
+</body>
+</html>

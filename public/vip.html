@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+  <title>ShopeeTreasures VIP · O Grupo Secreto de Achadinhos e Erros de Preço</title>
+  <meta name="description" content="Receba no seu WhatsApp alertas imediatos de erros de preço, achadinhos com até 85% OFF e cupons secretos da Shopee antes de todo mundo. 100% Gratuito.">
+  
+  <!-- OpenGraph & Social Cards -->
+  <meta property="og:title" content="ShopeeTreasures VIP · Pare de pagar preço cheio na Shopee">
+  <meta property="og:description" content="Erros de preço, achadinhos com até 85% OFF e cupons secretos direto no seu WhatsApp. Grupo 100% Gratuito.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://shopeetreasures-vip.netlify.app/vip">
+  <meta property="og:image" content="/icons/icon-512.png">
+  <meta name="theme-color" content="#060A09">
+
+  <!-- PWA & Favicon -->
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+
+  <!-- Google Fonts: Unbounded, Manrope & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Manrope:wght@300;400;500;600;700;800&family=Unbounded:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <style>
+    :root {
+      --noite: #060A09;
+      --breu: #0C1311;
+      --musgo: #14201C;
+      --grafite: #1D2A26;
+      --linha: rgba(238, 243, 239, 0.08);
+      --linha-forte: rgba(238, 243, 239, 0.16);
+      --f: #34F59A; /* Verde fósforo elétrico */
+      --brilho: #A6FFD0;
+      --shopee: #EE4D2D; /* Laranja oficial Shopee */
+      --shopee-bright: #FF5722;
+      --shopee-glow: rgba(238, 77, 45, 0.35);
+      --lua: #EEF3EF;
+      --nevoa: #98A6A0;
+      --erro: #FF5C6C;
+      --wrap: 1140px;
+    }
+
+    /* Reset & Mobile First Base */
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html {
+      background: var(--noite);
+      color: var(--lua);
+      font-family: 'Manrope', system-ui, -apple-system, sans-serif;
+      scroll-behavior: smooth;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+      line-height: 1.5;
+    }
+
+    body {
+      background: var(--noite);
+      color: var(--lua);
+      min-height: 100vh;
+      overflow-x: hidden;
+      padding-bottom: 90px; /* Espaço para o botão sticky no mobile */
+    }
+
+    @media (min-width: 900px) {
+      body { padding-bottom: 0; }
+    }
+
+    a { color: inherit; text-decoration: none; }
+    img { max-width: 100%; height: auto; display: block; }
+    button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+    
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    .g { color: var(--f); }
+    .orange { color: var(--shopee-bright); }
+    
+    .wrap {
+      width: 100%;
+      max-width: var(--wrap);
+      margin: 0 auto;
+      padding: 0 16px;
+    }
+    @media (min-width: 768px) {
+      .wrap { padding: 0 24px; }
+    }
+
+    .center { text-align: center; }
+
+    /* Pulse Dot */
+    .dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--f);
+      box-shadow: 0 0 0 0 rgba(52, 245, 154, 0.6);
+      animation: pulse 1.8s infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(52, 245, 154, 0.55); }
+      70% { box-shadow: 0 0 0 8px rgba(52, 245, 154, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(52, 245, 154, 0); }
+    }
+
+    /* Tipografia Fluida Mobile-First */
+    .h1 {
+      font-family: 'Unbounded', sans-serif;
+      font-weight: 800;
+      font-size: clamp(24px, 6.5vw, 54px);
+      line-height: 1.12;
+      letter-spacing: -0.035em;
+    }
+    .h2 {
+      font-family: 'Unbounded', sans-serif;
+      font-weight: 800;
+      font-size: clamp(22px, 5vw, 42px);
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+    }
+    .lead {
+      font-size: clamp(15px, 2.5vw, 18px);
+      color: rgba(238, 243, 239, 0.78);
+      margin-top: 16px;
+      line-height: 1.6;
+    }
+    .lead b { color: var(--lua); }
+    .sub {
+      font-size: 15px;
+      color: rgba(238, 243, 239, 0.7);
+      margin-top: 12px;
+      line-height: 1.55;
+    }
+
+    /* Botões */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: var(--f);
+      color: var(--noite);
+      font-weight: 800;
+      font-size: 15px;
+      padding: 15px 24px;
+      border-radius: 12px;
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+      text-align: center;
+      min-height: 48px;
+    }
+    .btn.shopee-btn {
+      background: linear-gradient(135deg, #FF5722, #EE4D2D);
+      color: #ffffff;
+      box-shadow: 0 8px 24px -6px rgba(238, 77, 45, 0.5);
+    }
+    .btn.shopee-btn:active {
+      transform: scale(0.98);
+    }
+    @media (hover: hover) {
+      .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px -8px rgba(52, 245, 154, 0.5);
+      }
+      .btn.shopee-btn:hover {
+        box-shadow: 0 12px 35px -8px rgba(238, 77, 45, 0.7);
+      }
+    }
+
+    .btn.sm {
+      padding: 8px 14px;
+      font-size: 12.5px;
+      border-radius: 9px;
+      min-height: 38px;
+    }
+    .btn.full {
+      width: 100%;
+    }
+
+    .ghost-btn {
+      background: rgba(238, 243, 239, 0.04);
+      color: var(--lua);
+      border: 1px solid rgba(238, 243, 239, 0.18);
+      padding: 14px 20px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 48px;
+      transition: 0.2s;
+    }
+    .ghost-btn:hover {
+      border-color: var(--f);
+      color: var(--f);
+    }
+
+    .cta-row {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 24px;
+      width: 100%;
+    }
+    @media (min-width: 540px) {
+      .cta-row {
+        flex-direction: row;
+        align-items: center;
+      }
+      .cta-row .btn, .cta-row .ghost-btn {
+        width: auto;
+      }
+    }
+
+    /* Floating Navigation */
+    #nav {
+      position: fixed;
+      left: 50%;
+      top: 10px;
+      transform: translateX(-50%);
+      width: calc(100% - 20px);
+      max-width: var(--wrap);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 12px 8px 14px;
+      border-radius: 14px;
+      background: rgba(12, 19, 17, 0.82);
+      border: 1px solid var(--linha-forte);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+    }
+    @media (min-width: 768px) {
+      #nav {
+        top: 14px;
+        width: calc(100% - 28px);
+        padding: 10px 18px 10px 20px;
+        border-radius: 18px;
+      }
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: 'Unbounded', sans-serif;
+      font-size: 14px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+    @media (min-width: 768px) {
+      .brand-group { font-size: 16px; gap: 10px; }
+    }
+
+    .brand-icon-circ {
+      width: 28px;
+      height: 28px;
+      border-radius: 7px;
+      background: linear-gradient(135deg, #ff5722, #ee4d2d);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 0.75rem;
+      flex-shrink: 0;
+    }
+    @media (min-width: 768px) {
+      .brand-icon-circ { width: 32px; height: 32px; border-radius: 8px; font-size: 0.85rem; }
+    }
+
+    #nav .links {
+      display: none;
+      gap: 20px;
+      font-size: 13px;
+      color: rgba(238, 243, 239, 0.72);
+      font-weight: 600;
+    }
+    @media (min-width: 900px) {
+      #nav .links { display: flex; }
+    }
+    #nav .links a:hover { color: var(--f); }
+
+    /* Pill Tag */
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10.5px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--f);
+      border: 1px solid rgba(52, 245, 154, 0.25);
+      padding: 6px 12px;
+      border-radius: 30px;
+      margin-bottom: 16px;
+      background: rgba(52, 245, 154, 0.05);
+      max-width: 100%;
+    }
+
+    .checks {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      list-style: none;
+      margin-top: 20px;
+      font-size: 13px;
+      color: rgba(238, 243, 239, 0.7);
+    }
+    @media (min-width: 600px) {
+      .checks {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 18px;
+      }
+    }
+    .checks li {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .checks li::before {
+      content: '✓';
+      color: var(--f);
+      font-weight: 800;
+    }
+
+    /* Sections */
+    .sec { padding: 60px 0; position: relative; }
+    @media (min-width: 768px) {
+      .sec { padding: 90px 0; }
+    }
+    .dark2 {
+      background: var(--breu);
+      border-top: 1px solid var(--linha);
+      border-bottom: 1px solid var(--linha);
+    }
+
+    /* HERO */
+    .hero {
+      padding: 85px 0 40px;
+      position: relative;
+      overflow: hidden;
+    }
+    @media (min-width: 768px) {
+      .hero { padding: 130px 0 70px; }
+    }
+
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: radial-gradient(ellipse 70% 60% at 80% 30%, rgba(52, 245, 154, 0.10), transparent 70%),
+                  radial-gradient(ellipse 60% 50% at 20% 70%, rgba(238, 77, 45, 0.10), transparent 70%),
+                  linear-gradient(180deg, transparent 75%, var(--noite));
+    }
+
+    .hero-grid {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 36px;
+      align-items: center;
+    }
+    @media (min-width: 960px) {
+      .hero-grid {
+        display: grid;
+        grid-template-columns: 1.15fr 0.85fr;
+        gap: 40px;
+      }
+    }
+
+    /* iPhone Mockup Fluido */
+    .phone-container {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      position: relative;
+    }
+    .phone {
+      width: 100%;
+      max-width: 320px;
+      background: #0E1513;
+      border-radius: 36px;
+      border: 1.5px solid #2A3833;
+      padding: 8px;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(52, 245, 154, 0.12);
+      position: relative;
+    }
+    .phone .notch {
+      position: absolute;
+      left: 50%;
+      top: 14px;
+      transform: translateX(-50%);
+      width: 80px;
+      height: 20px;
+      border-radius: 12px;
+      background: #000;
+      z-index: 5;
+    }
+    .wa {
+      width: 100%;
+      border-radius: 28px;
+      overflow: hidden;
+      background: #0B141A;
+      display: flex;
+      flex-direction: column;
+    }
+    .wa-top {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      padding: 34px 12px 10px;
+      background: #1F2C33;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .wa-av {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: #ee4d2d;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .wa-top b { display: block; font-size: 13px; color: #E9EDEF; }
+    .wa-top small { font-size: 10.5px; color: #8696A0; }
+    
+    .wa-feed {
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .wa-day {
+      align-self: center;
+      background: #182229;
+      color: #8696A0;
+      font-size: 10px;
+      padding: 3px 8px;
+      border-radius: 5px;
+      margin-bottom: 2px;
+    }
+    .msg {
+      background: #1F2C27;
+      border-radius: 10px;
+      padding: 8px;
+      font-size: 11.5px;
+      line-height: 1.35;
+      border-left: 3px solid var(--f);
+    }
+    .msg img {
+      width: 100%;
+      aspect-ratio: 16/9;
+      object-fit: cover;
+      border-radius: 6px;
+      margin-bottom: 6px;
+      background: #111;
+    }
+    .msg-title { font-weight: 700; color: #fff; margin-bottom: 3px; font-size: 12px; }
+    .msg-prices { color: #8696A0; font-size: 11px; margin-bottom: 4px; }
+    .msg-prices s { color: #FF5C6C; }
+    .msg-prices b { color: var(--f); font-size: 12.5px; }
+    .msg-coupon {
+      background: rgba(52, 245, 154, 0.12);
+      border: 1px dashed var(--f);
+      border-radius: 4px;
+      padding: 3px 6px;
+      font-size: 9.5px;
+      color: var(--f);
+      display: inline-block;
+      margin-bottom: 5px;
+    }
+    .msg-btn {
+      background: #00A884;
+      color: #fff;
+      display: block;
+      text-align: center;
+      padding: 6px;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 11px;
+      margin-top: 4px;
+    }
+    .msg-time {
+      font-size: 9px;
+      color: #8696A0;
+      text-align: right;
+      margin-top: 3px;
+    }
+
+    /* Marquee / Logos bar */
+    .logos-bar {
+      border-top: 1px solid var(--linha);
+      border-bottom: 1px solid var(--linha);
+      padding: 14px 0;
+      background: var(--breu);
+      overflow: hidden;
+      white-space: nowrap;
+    }
+    .logos-track {
+      display: inline-flex;
+      gap: 30px;
+      animation: marquee 20s linear infinite;
+    }
+    @keyframes marquee {
+      from { transform: translateX(0); }
+      to { transform: translateX(-50%); }
+    }
+    .logos-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11.5px;
+      color: rgba(238, 243, 239, 0.65);
+      text-transform: uppercase;
+    }
+    .logos-item i { color: var(--f); font-size: 8px; }
+
+    /* A DOR (Cards Grid) */
+    .dores-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      margin-top: 28px;
+    }
+    @media (min-width: 600px) {
+      .dores-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+    }
+    @media (min-width: 960px) {
+      .dores-grid { grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    }
+    .dor-card {
+      background: var(--breu);
+      border: 1px solid var(--linha);
+      border-radius: 16px;
+      padding: 20px;
+      transition: all 0.2s;
+    }
+    @media (min-width: 768px) {
+      .dor-card { padding: 26px 22px; }
+    }
+    .dor-card:hover {
+      border-color: rgba(52, 245, 154, 0.35);
+      transform: translateY(-2px);
+    }
+    .dor-card .big {
+      font-family: 'Unbounded', sans-serif;
+      font-size: 32px;
+      font-weight: 800;
+      color: var(--f);
+      display: block;
+      margin-bottom: 8px;
+      letter-spacing: -0.04em;
+    }
+    .dor-card.alert .big { color: var(--erro); }
+    .dor-card.orange .big { color: var(--shopee-bright); }
+    .dor-card h3 {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--lua);
+      margin-bottom: 6px;
+    }
+    .dor-card p {
+      font-size: 13px;
+      color: var(--nevoa);
+      line-height: 1.5;
+    }
+
+    /* COMO FUNCIONA (Flow Section) */
+    .flow-steps {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      margin-top: 28px;
+    }
+    @media (min-width: 640px) {
+      .flow-steps { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+    }
+    @media (min-width: 960px) {
+      .flow-steps { grid-template-columns: repeat(4, 1fr); gap: 18px; }
+    }
+    .flow-card {
+      background: var(--musgo);
+      border: 1px solid var(--linha);
+      border-radius: 16px;
+      padding: 20px;
+    }
+    .flow-card .num {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: rgba(52, 245, 154, 0.12);
+      color: var(--f);
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      margin-bottom: 12px;
+      border: 1px solid rgba(52, 245, 154, 0.3);
+    }
+    .flow-card h4 {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: #fff;
+    }
+    .flow-card p {
+      font-size: 12.5px;
+      color: var(--nevoa);
+      line-height: 1.5;
+    }
+
+    /* CALCULADORA DE ECONOMIA */
+    .calc-box {
+      background: linear-gradient(145deg, #14201C, #0C1311);
+      border: 1.5px solid rgba(52, 245, 154, 0.25);
+      border-radius: 20px;
+      padding: 24px 18px;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+      margin-top: 28px;
+    }
+    @media (min-width: 768px) {
+      .calc-box { padding: 34px 28px; border-radius: 24px; margin-top: 36px; }
+    }
+    .calc-row { margin-bottom: 20px; }
+    .calc-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      color: rgba(238, 243, 239, 0.7);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      gap: 10px;
+    }
+    .calc-label b {
+      color: var(--f);
+      font-size: 13.5px;
+      white-space: nowrap;
+    }
+    .calc-slider {
+      width: 100%;
+      height: 8px;
+      background: var(--grafite);
+      border-radius: 9999px;
+      outline: none;
+      -webkit-appearance: none;
+      accent-color: var(--f);
+      cursor: pointer;
+    }
+    .calc-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--f);
+      box-shadow: 0 0 10px rgba(52, 245, 154, 0.8);
+      cursor: pointer;
+    }
+    .calc-out-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      border-top: 1px solid var(--linha);
+      padding-top: 20px;
+      margin-top: 20px;
+    }
+    @media (min-width: 600px) {
+      .calc-out-grid { grid-template-columns: 1fr 1fr; gap: 16px; }
+    }
+    .calc-out-col {
+      background: rgba(6, 10, 9, 0.6);
+      border: 1px solid var(--linha);
+      border-radius: 14px;
+      padding: 16px;
+    }
+    .calc-out-col span {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10.5px;
+      color: var(--nevoa);
+      display: block;
+      margin-bottom: 4px;
+    }
+    .calc-out-col b {
+      font-family: 'Unbounded', sans-serif;
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--f);
+      letter-spacing: -0.03em;
+    }
+
+    /* FAQ ACCORDION */
+    .faq-list {
+      max-width: 820px;
+      margin: 28px auto 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .faq-item {
+      background: var(--breu);
+      border: 1px solid var(--linha);
+      border-radius: 14px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    .faq-item:hover { border-color: rgba(52, 245, 154, 0.3); }
+    .faq-q {
+      padding: 16px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 14.5px;
+      color: var(--lua);
+      user-select: none;
+      gap: 12px;
+    }
+    .faq-q i {
+      color: var(--f);
+      transition: transform 0.2s;
+      flex-shrink: 0;
+    }
+    .faq-a {
+      padding: 0 18px 16px;
+      font-size: 13.5px;
+      color: var(--nevoa);
+      line-height: 1.55;
+      display: none;
+    }
+    .faq-item.open .faq-a { display: block; }
+    .faq-item.open .faq-q i { transform: rotate(45deg); }
+
+    /* FOOTER */
+    .foot {
+      border-top: 1px solid var(--linha);
+      padding: 40px 0 60px;
+      text-align: center;
+      font-size: 12.5px;
+      color: var(--nevoa);
+      background: var(--noite);
+    }
+    .foot a { color: var(--lua); margin: 0 8px; }
+    .foot a:hover { color: var(--f); }
+
+    /* Sticky Bottom Mobile CTA */
+    .mcta {
+      position: fixed;
+      bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+      left: 12px;
+      right: 12px;
+      background: linear-gradient(135deg, #FF5722, #EE4D2D);
+      color: #fff;
+      font-weight: 800;
+      font-size: 15px;
+      text-align: center;
+      padding: 14px 20px;
+      border-radius: 14px;
+      box-shadow: 0 8px 24px rgba(238, 77, 45, 0.65);
+      z-index: 95;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    @media (min-width: 900px) {
+      .mcta { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Floating Nav -->
+  <header id="nav">
+    <a href="/vip" class="brand-group">
+      <div class="brand-icon-circ">
+        <i class="fa-solid fa-bag-shopping"></i>
+      </div>
+      <div>
+        Shopee<span class="g">Treasures</span> <span class="mono" style="font-size: 9px; color: var(--f); font-weight: 700; background: rgba(52,245,154,0.15); padding: 2px 5px; border-radius: 4px; margin-left: 2px;">VIP</span>
+      </div>
+    </a>
+
+    <nav class="links">
+      <a href="#dor">A Dor</a>
+      <a href="#fluxo">Como Funciona</a>
+      <a href="#ao-vivo">Ao Vivo</a>
+      <a href="#calculadora">Calculadora</a>
+      <a href="#faq">Dúvidas</a>
+    </nav>
+
+    <div>
+      <a id="btnNavVip" href="https://chat.whatsapp.com/KjHrqfJp3HuIHQiR8Zfl3L" target="_blank" class="btn sm shopee-btn">
+        <span class="dot"></span> Entrar no Grupo
+      </a>
+    </div>
+  </header>
+
+  <main>
+    <!-- HERO SECTION -->
+    <section class="hero">
+      <div class="hero-bg"></div>
+      <div class="wrap hero-grid">
+        
+        <!-- Left Copy -->
+        <div class="hero-copy">
+          <div class="pill">
+            <span class="dot"></span> CLUBE VIP · VAGAS GRATUITAS ABERTAS
+          </div>
+          <h1 class="h1">
+            Você montou sua casa pra curtir. <span class="g">Não pra passar o dia caçando cupom.</span>
+          </h1>
+          <p class="lead">
+            Garimpar achadinhos, testar código que não funciona e ver a oferta relâmpago esgotar no seu carrinho. <b>O Grupo VIP do ShopeeTreasures entrega erros de preço e cupons de até 85% direto no seu WhatsApp, no segundo em que entram no ar.</b>
+          </p>
+          
+          <div class="cta-row">
+            <a id="btnHeroVip" href="https://chat.whatsapp.com/KjHrqfJp3HuIHQiR8Zfl3L" target="_blank" class="btn shopee-btn full">
+              Quero entrar no Grupo VIP <i class="fa-solid fa-arrow-right"></i>
+            </a>
+            <a href="#ao-vivo" class="ghost-btn full">
+              <i class="fa-solid fa-play"></i> Ver ofertas ao vivo
+            </a>
+          </div>
+
+          <ul class="checks">
+            <li>100% Gratuito</li>
+            <li>Sem Spam (Apenas Melhores Ofertas)</li>
+            <li>Links Oficiais com Garantia Shopee</li>
+          </ul>
+        </div>
+
+        <!-- Right iPhone Stage (Interactive simulated WhatsApp) -->
+        <div class="phone-container" id="ao-vivo">
+          <div class="phone">
+            <div class="notch"></div>
+            <div class="wa">
+              
+              <!-- WhatsApp Header -->
+              <div class="wa-top">
+                <div class="wa-av">
+                  <img src="/foto-grupo-1.jpg" alt="ShopeeTreasures VIP #1" style="width: 100%; height: 100%; object-fit: cover;">
+                </div>
+                <div>
+                  <b>ShopeeTreasures VIP #1 🔥</b>
+                  <small><span class="dot"></span>1.428 membros online</small>
+                </div>
+              </div>
+
+              <!-- Message Stream -->
+              <div class="wa-feed" id="waFeed">
+                <div class="wa-day">HOJE</div>
+
+                <!-- Message 1 -->
+                <div class="msg">
+                  <img src="https://cf.shopee.com.br/file/sg-11134201-8258j-mtrswsn39cslf9" alt="Mini Ventilador Portátil" loading="lazy">
+                  <div class="msg-title">🔥 Ventilador Portátil de Cintura & Mesa</div>
+                  <div class="msg-prices">De: <s>R$ 159,00</s> ➔ <b>R$ 44,52</b> (-72% OFF)</div>
+                  <div class="msg-coupon">🎟️ CUPOM: SHOPEE20ATIVO</div>
+                  <a href="https://s.shopee.com.br/7VHCGAiE5g" target="_blank" class="msg-btn">🛒 COMPRAR NA SHOPEE (R$ 44,52)</a>
+                  <div class="msg-time">12:03 · Enviado agora ✓✓</div>
+                </div>
+
+                <!-- Message 2 -->
+                <div class="msg">
+                  <img src="https://cf.shopee.com.br/file/br-11134207-820me-mneaqb9op8n481" alt="Kit Silicone Cozinha" loading="lazy">
+                  <div class="msg-title">⚡ Kit Utensílios Silicone Cozinha Premium</div>
+                  <div class="msg-prices">De: <s>R$ 90,00</s> ➔ <b>R$ 18,90</b> (-79% OFF)</div>
+                  <div class="msg-coupon">🎟️ FRETE GRÁTIS APLICADO</div>
+                  <a href="https://s.shopee.com.br/qkIAin4WU" target="_blank" class="msg-btn">🛒 PEGAR OFERTA RELÂMPAGO</a>
+                  <div class="msg-time">12:11 · Enviado agora ✓✓</div>
+                </div>
+
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- MARQUEE BAR -->
+    <div class="logos-bar">
+      <div class="logos-track">
+        <div class="logos-item"><i class="fa-solid fa-circle"></i> Erros de Preço Verificados</div>
+        <div class="logos-item"><i class="fa-solid fa-circle"></i> Cupons de Frete Grátis</div>
+        <div class="logos-item"><i class="fa-solid fa-circle"></i> Eletrônicos & Smartwatches</div>
+        <div class="logos-item"><i class="fa-solid fa-circle"></i> Utilidades de Casa & Cozinha</div>
+        <div class="logos-item"><i class="fa-solid fa-circle"></i> Skincare & Beleza</div>
+        <div class="logos-item"><i class="fa-solid fa-circle"></i> Moda & Acessórios</div>
+        <div class="logos-item"><i class="fa-solid fa-circle"></i> Lojas Oficiais 4.8★+</div>
+        <div class="logos-item"><i class="fa-solid fa-circle"></i> Alertas em Tempo Real</div>
+      </div>
+    </div>
+
+    <!-- SEÇÃO A DOR (Cards inspirados no Buboflow) -->
+    <section id="dor" class="sec">
+      <div class="wrap">
+        <div class="pill">O QUE ACONTECE TODO DIA</div>
+        <h2 class="h2">Comprar na Shopee sem o Grupo VIP custa caro.</h2>
+        <p class="sub">Se você compra online, com certeza já viveu alguma dessas situações:</p>
+
+        <div class="dores-grid">
+          <div class="dor-card">
+            <span class="big">4h</span>
+            <h3>por dia rolando o feed</h3>
+            <p>Garimpando centenas de produtos sem saber se o desconto é real ou se o vendedor inflou o preço antes.</p>
+          </div>
+
+          <div class="dor-card alert">
+            <span class="big mono">12:08</span>
+            <h3>o cupom esgotou</h3>
+            <p>A Shopee soltou cupom de R$ 50. Como ninguém te avisou, quando você entrou já tinha atingido o limite.</p>
+          </div>
+
+          <div class="dor-card orange">
+            <span class="big">85%</span>
+            <h3>de desconto em erros de preço</h3>
+            <p>Falhas de precificação e queimas de estoque duram poucos minutos. Quem está no grupo compra antes de corrigir.</p>
+          </div>
+
+          <div class="dor-card">
+            <span class="big">R$ 0</span>
+            <h3>de economia no carrinho</h3>
+            <p>Você finaliza a compra pagando frete cheio porque não sabia que tinha cupom acumulativo liberado hoje.</p>
+          </div>
+
+          <div class="dor-card">
+            <span class="big">★ 4.8+</span>
+            <h3>apenas lojas confiáveis</h3>
+            <p>Chega de comprar em loja com nota baixa que não entrega. No VIP, cada link passa por triagem rigorosa.</p>
+          </div>
+
+          <div class="dor-card">
+            <span class="big">100%</span>
+            <h3>gratuito para sempre</h3>
+            <p>Você não paga um único centavo para participar. Nós somos remunerados pela Shopee Oficial através de afiliação.</p>
+          </div>
+        </div>
+
+        <div style="margin-top: 32px; text-align: center;">
+          <a id="btnDorVip" href="https://chat.whatsapp.com/KjHrqfJp3HuIHQiR8Zfl3L" target="_blank" class="btn shopee-btn">
+            Quero parar de perder cupons no WhatsApp <i class="fa-solid fa-arrow-right"></i>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- COMO FUNCIONA O FLUXO -->
+    <section id="fluxo" class="sec dark2">
+      <div class="wrap">
+        <div class="pill">BASTIDORES DA CURADORIA</div>
+        <h2 class="h2">Como os achadinhos chegam até você em segundos:</h2>
+        
+        <div class="flow-steps">
+          <div class="flow-card">
+            <div class="num">01</div>
+            <h4>Varredura 24/7</h4>
+            <p>Nossos robôs integrados à Open API da Shopee monitoram milhares de ofertas relâmpago e quedas de preço em tempo real.</p>
+          </div>
+
+          <div class="flow-card">
+            <div class="num">02</div>
+            <h4>Filtro de Reputação</h4>
+            <p>Descartamos produtos sem avaliação ou com notas ruins. Só entram produtos com mais de 4.8★ e lojas verificadas.</p>
+          </div>
+
+          <div class="flow-card">
+            <div class="num">03</div>
+            <h4>Cruzamento de Cupons</h4>
+            <p>Testamos cupons secretos acumulativos que dão frete grátis e abatem até 80% do valor final da compra.</p>
+          </div>
+
+          <div class="flow-card">
+            <div class="num">04</div>
+            <h4>Alerta no Seu WhatsApp</h4>
+            <p>A mensagem formatada com foto, preço antigo, preço novo e link oficial seguro chega no seu WhatsApp pronta para você clicar.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CALCULADORA DE ECONOMIA -->
+    <section id="calculadora" class="sec">
+      <div class="wrap">
+        <div class="pill">SIMULADOR INTERATIVO</div>
+        <h2 class="h2">Quanto você pode economizar por ano estando no Grupo VIP?</h2>
+        <p class="sub">Faça a simulação com base nos seus hábitos normais de compras na internet:</p>
+
+        <div class="calc-box">
+          <div class="calc-row">
+            <div class="calc-label">
+              <span>Compras que você faz na internet por mês</span>
+              <b id="lblCompras">4 compras/mês</b>
+            </div>
+            <input type="range" id="rngCompras" class="calc-slider" min="1" max="15" value="4" oninput="updateCalculator()">
+          </div>
+
+          <div class="calc-row">
+            <div class="calc-label">
+              <span>Valor médio gasto por compra</span>
+              <b id="lblGasto">R$ 120,00</b>
+            </div>
+            <input type="range" id="rngGasto" class="calc-slider" min="30" max="600" step="10" value="120" oninput="updateCalculator()">
+          </div>
+
+          <div class="calc-out-grid">
+            <div class="calc-out-col">
+              <span>ECONOMIA MÉDIA POR MÊS</span>
+              <b id="resMes">R$ 192,00</b>
+              <p style="font-size: 11px; color: var(--nevoa); margin-top: 4px;">Com descontos médios de 40% a 70% e cupons</p>
+            </div>
+
+            <div class="calc-out-col" style="border-color: rgba(52, 245, 154, 0.4);">
+              <span>ECONOMIA ESTIMADA EM 1 ANO</span>
+              <b id="resAno" class="g">R$ 2.304,00</b>
+              <p style="font-size: 11px; color: var(--nevoa); margin-top: 4px;">Dinheiro limpo que fica no seu bolso</p>
+            </div>
+          </div>
+
+          <div style="margin-top: 24px; text-align: center;">
+            <a id="btnCalcVip" href="https://chat.whatsapp.com/KjHrqfJp3HuIHQiR8Zfl3L" target="_blank" class="btn shopee-btn full">
+              Economizar mais de R$ 2.000 agora com o Grupo VIP <i class="fa-solid fa-arrow-right"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ SECTION (Accordion) -->
+    <section id="faq" class="sec dark2">
+      <div class="wrap">
+        <div class="center">
+          <div class="pill">TIRA-DÚVIDAS</div>
+          <h2 class="h2 center">Perguntas Frequentes</h2>
+          <p class="sub center">Tudo o que você precisa saber sobre o ShopeeTreasures VIP.</p>
+        </div>
+
+        <div class="faq-list">
+          <div class="faq-item open">
+            <div class="faq-q" onclick="toggleFaq(this)">
+              <span>É realmente 100% gratuito para participar?</span>
+              <i class="fa-solid fa-plus"></i>
+            </div>
+            <div class="faq-a" style="display: block;">
+              Sim! Você não paga absolutamente nada para entrar nem para permanecer no grupo. Nós somos remunerados pela Shopee através do programa oficial de afiliados quando você aproveita uma promoção pelo nosso link, sem nenhum custo extra para você.
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <div class="faq-q" onclick="toggleFaq(this)">
+              <span>O grupo fica mandando mensagens chatas e spam o dia todo?</span>
+              <i class="fa-solid fa-plus"></i>
+            </div>
+            <div class="faq-a">
+              Não! O grupo é totalmente focado e silencioso. Apenas a administração posta ofertas selecionadas a dedo. Não há bate-papo de membros nem correntes. Enviamos apenas produtos com desconto comprovado e cupons de verdade.
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <div class="faq-q" onclick="toggleFaq(this)">
+              <span>Os links são confiáveis e oficiais da Shopee?</span>
+              <i class="fa-solid fa-plus"></i>
+            </div>
+            <div class="faq-a">
+              Sim! Todos os links compartilhados no grupo são gerados diretamente pela Shopee Brasil Oficial. Ao clicar, você é direcionado diretamente para o aplicativo ou site oficial da Shopee, com toda a segurança e a Garantia Shopee.
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <div class="faq-q" onclick="toggleFaq(this)">
+              <span>Como faço para silenciar as notificações?</span>
+              <i class="fa-solid fa-plus"></i>
+            </div>
+            <div class="faq-a">
+              Assim que entrar no grupo no WhatsApp, toque no topo sobre o nome do grupo e selecione a opção "Silenciar notificações" e marque "Sempre". Assim você pode abrir o grupo quando tiver tempo sem o celular ficar apitando.
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <div class="faq-q" onclick="toggleFaq(this)">
+              <span>Posso sair do grupo a qualquer momento?</span>
+              <i class="fa-solid fa-plus"></i>
+            </div>
+            <div class="faq-a">
+              Com certeza! Não há fidelidade nem compromisso. Se a qualquer momento você decidir sair, basta dar um toque e sair do grupo.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FINAL CTA -->
+    <section class="sec" style="text-align: center; padding: 70px 0;">
+      <div class="wrap">
+        <h2 class="h1" style="max-width: 800px; margin: 0 auto;">
+          Você vive. <span class="g">O ShopeeTreasures garimpa.</span>
+        </h2>
+        <p class="lead" style="margin: 16px auto 28px; text-align: center;">
+          Junte-se a milhares de compradores inteligentes que economizam todo mês com achadinhos oficiais da Shopee.
+        </p>
+        <a id="btnFinalVip" href="https://chat.whatsapp.com/KjHrqfJp3HuIHQiR8Zfl3L" target="_blank" class="btn shopee-btn" style="font-size: 16px; padding: 16px 32px;">
+          Entrar no Grupo VIP Grátis no WhatsApp <i class="fa-solid fa-arrow-right"></i>
+        </a>
+        <div style="font-size: 12.5px; color: var(--nevoa); margin-top: 14px;">
+          ✓ Acesso imediato · Sem mensalidade · Vagas limitadas
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="foot">
+    <div class="wrap">
+      <div style="font-family: 'Unbounded', sans-serif; font-weight: 800; font-size: 1rem; color: #fff; margin-bottom: 10px;">
+        Shopee<span class="g">Treasures</span> VIP
+      </div>
+      <p style="margin-bottom: 14px; color: var(--nevoa); font-size: 12px; max-width: 600px; margin: 0 auto 14px; line-height: 1.5;">
+        Curadoria independente de achadinhos e cupons da Shopee Brasil. Participamos do Programa de Afiliados Shopee. Todos os links são direcionados para os servidores oficiais da Shopee.
+      </p>
+      <div style="margin-bottom: 16px; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px;">
+        <a href="/">Vitrine Oficial</a> ·
+        <a href="#dor">A Dor</a> ·
+        <a href="#fluxo">Como Funciona</a> ·
+        <a href="#calculadora">Calculadora</a> ·
+        <a href="#faq">Dúvidas</a>
+      </div>
+      <div class="mono" style="font-size: 10.5px; opacity: 0.6;">
+        © 2026 SHOPEETREASURES · TODOS OS DIREITOS RESERVADOS
+      </div>
+    </div>
+  </footer>
+
+  <!-- MOBILE STICKY BOTTOM BUTTON -->
+  <a id="btnMobileSticky" href="https://chat.whatsapp.com/KjHrqfJp3HuIHQiR8Zfl3L" target="_blank" class="mcta">
+    <i class="fa-brands fa-whatsapp" style="font-size: 1.25rem;"></i>
+    <span>Entrar no Grupo VIP Grátis <i class="fa-solid fa-arrow-right" style="font-size: 0.85rem; margin-left: 4px;"></i></span>
+  </a>
+
+  <script>
+    // API Base URL — agora hospedado 100% na Netlify via Netlify Functions
+    const API_BASE = '';
+
+    // FAQ Accordion toggle
+    function toggleFaq(headerEl) {
+      const item = headerEl.parentElement;
+      const isOpen = item.classList.contains('open');
+      document.querySelectorAll('.faq-item').forEach(el => {
+        el.classList.remove('open');
+        el.querySelector('.faq-a').style.display = 'none';
+      });
+      if (!isOpen) {
+        item.classList.add('open');
+        item.querySelector('.faq-a').style.display = 'block';
+      }
+    }
+
+    // Dynamic Calculator (Buboflow style)
+    function updateCalculator() {
+      const compras = parseInt(document.getElementById('rngCompras').value, 10);
+      const gastoMedio = parseInt(document.getElementById('rngGasto').value, 10);
+
+      document.getElementById('lblCompras').textContent = compras + (compras === 1 ? ' compra/mês' : ' compras/mês');
+      document.getElementById('lblGasto').textContent = 'R$ ' + gastoMedio.toFixed(2).replace('.', ',');
+
+      // Estimate ~40% average savings using VIP flash discounts & coupons
+      const economiaPorCompra = gastoMedio * 0.40;
+      const economiaMes = compras * economiaPorCompra;
+      const economiaAno = economiaMes * 12;
+
+      document.getElementById('resMes').textContent = 'R$ ' + economiaMes.toFixed(2).replace('.', ',');
+      document.getElementById('resAno').textContent = 'R$ ' + economiaAno.toFixed(2).replace('.', ',');
+    }
+
+    // Fetch dynamic WhatsApp link from server settings
+    async function loadWhatsappLink() {
+      try {
+        const res = await fetch(API_BASE + '/api/settings');
+        if (res.ok) {
+          const settings = await res.json();
+          const link = settings.whatsapp_link || 'https://chat.whatsapp.com/KjHrqfJp3HuIHQiR8Zfl3L';
+          
+          const targets = ['btnNavVip', 'btnHeroVip', 'btnDorVip', 'btnCalcVip', 'btnFinalVip', 'btnMobileSticky'];
+          targets.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.href = link;
+          });
+        }
+      } catch (e) {
+        console.warn('Usando link padrão do WhatsApp');
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      updateCalculator();
+      loadWhatsappLink();
+    });
+  </script>
+</body>
+</html>

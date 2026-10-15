@@ -1,0 +1,59 @@
+{
+  "name": "ShopeeTreasures - Achadinhos Verificados",
+  "short_name": "ShopeeTreasures",
+  "description": "Vitrine oficial de achadinhos, cupons e ofertas com até 80% de desconto na Shopee Brasil.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f5f5f5",
+  "theme_color": "#ee4d2d",
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "categories": [
+    "shopping",
+    "lifestyle"
+  ],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Ofertas Relâmpago",
+      "short_name": "Relâmpago",
+      "description": "Veja os achadinhos com maior desconto do dia",
+      "url": "/#flash-deals",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Mais Vendidos",
+      "short_name": "Top Vendas",
+      "description": "Confira os produtos mais vendidos da semana",
+      "url": "/#top-sales",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

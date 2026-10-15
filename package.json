@@ -1,0 +1,15 @@
+{
+  "name": "shopee-afiliados",
+  "version": "1.0.0",
+  "description": "Vitrine de Achadinhos e Vendas Automatizadas para Afiliados da Shopee",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "^7.0.0-rc14",
+    "express": "^4.21.2",
+    "pino": "^10.4.0",
+    "qrcode": "^1.5.4"
+  }
+}
