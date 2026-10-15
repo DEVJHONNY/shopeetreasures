@@ -15,8 +15,8 @@ if (!fs.existsSync(SESSION_DIR)) fs.mkdirSync(SESSION_DIR, { recursive: true });
 // Link oficial do seu grupo WhatsApp
 const WHATSAPP_GROUP_LINK = 'https://chat.whatsapp.com/KjHrqfJp3HuIHQiR8Zfl3L';
 
-// Intervalo entre os disparos em minutos (ex: 60 = 1 hora)
-const INTERVALO_MINUTOS = 60;
+// Intervalo entre os disparos em minutos (15 minutos conforme solicitado)
+const INTERVALO_MINUTOS = 15;
 
 let sock = null;
 let targetGroupJid = null;
