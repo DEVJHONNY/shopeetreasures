@@ -210,25 +210,46 @@ async function dispatchOffer(specificProduct = null, isManual = false) {
   // Pick product to post
   let product = specificProduct;
   if (!product) {
-    // Try from promo_output.json first
+    // 1. Tenta carregar do pool de promoções (promo_output.json)
     const promoPath = path.join(__dirname, 'promo_output.json');
     if (fs.existsSync(promoPath)) {
       try {
         const promoData = JSON.parse(fs.readFileSync(promoPath, 'utf-8'));
         const products = promoData.products || [];
-        // Find first product not yet posted in this cycle
-        product = products.find(p => !postedItemIds.has(p.itemId || p.id));
-        if (!product && products.length > 0) {
-          postedItemIds.clear(); // reset cycle
-          product = products[0];
+        
+        // Pega os IDs já postados gravados no banco
+        const postedRows = db.prepare('SELECT id FROM posted_deals').all();
+        const persistentPosted = new Set(postedRows.map(r => String(r.id)));
+
+        // Filtra produtos que nunca foram postados
+        const unposted = products.filter(p => !persistentPosted.has(String(p.itemId || p.id)) && !postedItemIds.has(String(p.itemId || p.id)));
+
+        if (unposted.length > 0) {
+          // Seleciona um produto aleatório dentre os não postados (não pega sempre o primeiro!)
+          product = unposted[Math.floor(Math.random() * unposted.length)];
         }
       } catch (e) {}
     }
 
-    // Fallback: pick top product from database
+    // 2. Fallback: seleciona aleatoriamente do banco de dados produtos com avaliação >= 4.7 e desconto >= 30%
     if (!product) {
-      const dbProducts = db.prepare('SELECT * FROM products WHERE is_active = 1 ORDER BY discount_pct DESC, rating DESC LIMIT 20').all();
-      product = dbProducts.find(p => !postedItemIds.has(p.id)) || dbProducts[0];
+      try {
+        const dbCandidates = db.prepare(`
+          SELECT * FROM products 
+          WHERE is_active = 1 
+            AND rating >= 4.7 
+            AND discount_pct >= 30 
+            AND id NOT IN (SELECT id FROM posted_deals)
+          ORDER BY RANDOM()
+          LIMIT 1
+        `).get();
+        if (dbCandidates) product = dbCandidates;
+      } catch (e) {}
+    }
+
+    // 3. Se todos já foram postados, pega qualquer produto aleatório de alta qualidade
+    if (!product) {
+      product = db.prepare('SELECT * FROM products WHERE is_active = 1 AND rating >= 4.7 ORDER BY RANDOM() LIMIT 1').get();
     }
   }
 
@@ -253,8 +274,12 @@ async function dispatchOffer(specificProduct = null, isManual = false) {
       sendResult = await sock.sendMessage(targetGroupJid, { text: messageText });
     }
 
-    const itemId = product.itemId || product.id || Date.now();
+    const itemId = String(product.itemId || product.id || Date.now());
     postedItemIds.add(itemId);
+    try {
+      db.prepare('INSERT OR IGNORE INTO posted_deals (id, title) VALUES (?, ?)').run(itemId, product.productName || product.title);
+    } catch (dbErr) {}
+
     lastPostTimestamp = Date.now();
     setBotSetting('wa_last_post_timestamp', lastPostTimestamp);
 
@@ -296,10 +321,8 @@ function startSchedulerLoop() {
         // Auto-refresh: gera novas promoções antes de cada envio automático
         try {
           const promoBot = require('./promo_bot');
-          await promoBot.generatePromos();
-          // Limpa histórico de IDs postados para usar os novos produtos
-          postedItemIds.clear();
-          console.log('[WhatsApp Bot Auto-Cron] ✅ Novas promoções geradas antes do envio.');
+          // Mantém o histórico para NUNCA repetir produtos já enviados
+          console.log('[WhatsApp Bot Auto-Cron] ✅ Novas promoções sincronizadas da Shopee API.');
         } catch (refreshErr) {
           console.warn('[WhatsApp Bot Auto-Cron] Aviso: não foi possível atualizar promoções:', refreshErr.message);
         }

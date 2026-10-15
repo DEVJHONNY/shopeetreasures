@@ -20,7 +20,6 @@ const INTERVALO_MINUTOS = 60;
 
 let sock = null;
 let targetGroupJid = null;
-const postedItemIds = new Set();
 
 async function resolveGroupJid(codeOrUrl) {
   if (!sock) return null;
@@ -52,44 +51,87 @@ async function resolveGroupJid(codeOrUrl) {
   return targetGroupJid;
 }
 
-async function fetchNextBestOffer() {
-  const keywords = ['', 'fone bluetooth', 'skincare beleza', 'utilidades cozinha', 'smartwatch', 'organizador', 'copo térmico'];
-  const kw = keywords[Math.floor(Math.random() * keywords.length)];
+// Arquivo de persistência local para não repetir produtos mesmo reiniciando o robô
+const POSTED_HISTORY_FILE = path.join(__dirname, 'posted_deals.json');
 
+function loadPostedHistory() {
   try {
-    const nodes = await shopeeApi.fetchTopOffers({ keyword: kw, limit: 20 });
-    for (const item of nodes) {
-      if (!item || !item.productName || !item.offerLink) continue;
-      if (postedItemIds.has(item.itemId)) continue;
-
-      const rating = parseFloat(item.ratingStar || 0);
-      const discountPct = parseInt(item.priceDiscountRate || 0, 10);
-      const price = parseFloat(item.priceMin || 0);
-
-      // Filtro rigoroso: avaliação >= 4.8 e desconto >= 30%
-      if (rating >= 4.8 && discountPct >= 30 && price > 0) {
-        const origPrice = price / (1 - (discountPct / 100));
-        return {
-          id: item.itemId,
-          title: item.productName,
-          priceCurrent: price,
-          originalPrice: origPrice,
-          discountPct,
-          savings: origPrice - price,
-          ratingStar: rating.toFixed(1),
-          salesCount: `${item.sales || 0} vendidos`,
-          shopName: item.shopName || 'Loja Verificada na Shopee',
-          imageUrl: item.imageUrl,
-          offerLink: item.offerLink
-        };
-      }
+    if (fs.existsSync(POSTED_HISTORY_FILE)) {
+      const ids = JSON.parse(fs.readFileSync(POSTED_HISTORY_FILE, 'utf8'));
+      return new Set(ids.map(String));
     }
-  } catch (e) {
-    console.warn('[Shopee API] Erro ao buscar ofertas:', e.message);
+  } catch (e) {}
+  return new Set();
+}
+
+function savePostedHistory(id) {
+  try {
+    postedItemIds.add(String(id));
+    const arr = Array.from(postedItemIds).slice(-500); // mantém os últimos 500
+    fs.writeFileSync(POSTED_HISTORY_FILE, JSON.stringify(arr, null, 2));
+  } catch (e) {}
+}
+
+const postedItemIds = loadPostedHistory();
+
+const DIVERSE_KEYWORDS = [
+  '', 'fone bluetooth', 'skincare beleza', 'utilidades cozinha', 'smartwatch',
+  'organizador', 'copo térmico', 'luminária led', 'ferramentas', 'massageador',
+  'perfume', 'cabo usb c', 'suporte celular', 'mochila impermeavel', 'relogio masculino',
+  'panela eletrica', 'garrafa inox', 'mouse sem fio', 'decoracao casa', 'fone lenovo'
+];
+
+async function fetchNextBestOffer() {
+  // Embaralha as keywords para não consultar sempre as mesmas
+  const shuffledKeywords = [...DIVERSE_KEYWORDS].sort(() => Math.random() - 0.5);
+
+  for (const kw of shuffledKeywords.slice(0, 4)) {
+    // Escolhe uma página aleatória entre 1 e 3 para variar os achadinhos
+    const randomPage = Math.floor(Math.random() * 3) + 1;
+
+    try {
+      const nodes = await shopeeApi.fetchTopOffers({ keyword: kw, page: randomPage, limit: 30 });
+      // Embaralha os resultados obtidos da Shopee para seleção aleatória
+      const candidates = nodes.sort(() => Math.random() - 0.5);
+
+      for (const item of candidates) {
+        if (!item || !item.productName || !item.offerLink) continue;
+        const itemIdStr = String(item.itemId);
+        if (postedItemIds.has(itemIdStr)) continue;
+
+        const rating = parseFloat(item.ratingStar || 0);
+        const discountPct = parseInt(item.priceDiscountRate || 0, 10);
+        const price = parseFloat(item.priceMin || 0);
+
+        // Filtro: avaliação >= 4.8 e desconto >= 30%
+        if (rating >= 4.8 && discountPct >= 30 && price > 0) {
+          const origPrice = price / (1 - (discountPct / 100));
+          return {
+            id: itemIdStr,
+            title: item.productName,
+            priceCurrent: price,
+            originalPrice: origPrice,
+            discountPct,
+            savings: origPrice - price,
+            ratingStar: rating.toFixed(1),
+            salesCount: `${item.sales || 0} vendidos`,
+            shopName: item.shopName || 'Loja Verificada na Shopee',
+            imageUrl: item.imageUrl,
+            offerLink: item.offerLink
+          };
+        }
+      }
+    } catch (e) {
+      console.warn(`[Shopee API] Aviso na busca (${kw}):`, e.message);
+    }
   }
 
-  // Se já postou tudo do ciclo, reinicia o histórico
-  postedItemIds.clear();
+  // Se por acaso já postou tudo do pool recente, limpa metade do histórico antigo para rodar ofertas novas
+  if (postedItemIds.size > 200) {
+    const list = Array.from(postedItemIds).slice(-100);
+    postedItemIds.clear();
+    list.forEach(id => postedItemIds.add(id));
+  }
   return null;
 }
 
@@ -125,7 +167,7 @@ async function dispatchNextOffer() {
       await sock.sendMessage(targetGroupJid, { text: messageText });
     }
 
-    postedItemIds.add(offer.id);
+    savePostedHistory(offer.id);
     console.log(`[WhatsApp] ✅ Oferta disparada com sucesso no grupo: "${offer.title}" (R$ ${offer.priceCurrent.toFixed(2).replace('.', ',')})`);
   } catch (err) {
     console.error('[WhatsApp] Erro no envio:', err.message);
