@@ -4,6 +4,7 @@
   "description": "Vitrine de Achadinhos e Vendas Automatizadas para Afiliados da Shopee",
   "main": "server.js",
   "scripts": {
+    "build": "echo Build OK",
     "start": "node server.js"
   },
   "dependencies": {
