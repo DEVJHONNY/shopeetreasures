@@ -595,11 +595,19 @@
 
     <!-- Tabela de Produtos -->
     <div class="panel">
-      <div class="panel-header">
+      <div class="panel-header" style="flex-wrap: wrap; gap: 0.75rem;">
         <div class="panel-title">
           <i class="fa-solid fa-list" style="color: var(--primary);"></i>
-          Produtos Ativos na Vitrine
+          Produtos Ativos na Vitrine (<span id="filteredProductsCount">0</span>)
         </div>
+        <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+          <input type="text" id="adminProductSearchInput" placeholder="Buscar por nome..." oninput="handleAdminProductSearch(this.value)" style="height: 32px; padding: 0.2rem 0.6rem; font-size: 0.8rem; width: 170px;">
+        </div>
+      </div>
+
+      <!-- Barra de Distribuição por Categorias (Filtros Clicáveis) -->
+      <div id="categoryFilterBar" style="display: flex; gap: 0.4rem; padding: 0.65rem 0 0.85rem; overflow-x: auto; flex-wrap: wrap;">
+        <!-- Injetado dinamicamente via JS -->
       </div>
 
       <div class="table-responsive">
@@ -983,21 +991,84 @@
     let clicksChartInstance = null;
     let categoriesChartInstance = null;
 
+    let allAdminProducts = [];
+    let currentAdminCategoryFilter = 'Todos';
+    let currentAdminSearchTerm = '';
+
+    function handleAdminCategoryFilter(cat) {
+      currentAdminCategoryFilter = cat;
+      applyAdminProductFilters();
+    }
+
+    function handleAdminProductSearch(term) {
+      currentAdminSearchTerm = (term || '').trim().toLowerCase();
+      applyAdminProductFilters();
+    }
+
+    function applyAdminProductFilters() {
+      let filtered = allAdminProducts;
+      if (currentAdminCategoryFilter && currentAdminCategoryFilter !== 'Todos') {
+        filtered = filtered.filter(p => p.category === currentAdminCategoryFilter);
+      }
+      if (currentAdminSearchTerm) {
+        filtered = filtered.filter(p => (p.title || '').toLowerCase().includes(currentAdminSearchTerm));
+      }
+      renderFilteredProductsList(filtered);
+      renderCategoryFilterBar();
+    }
+
+    function renderCategoryFilterBar() {
+      const bar = document.getElementById('categoryFilterBar');
+      if (!bar) return;
+
+      const counts = { 'Todos': allAdminProducts.length };
+      allAdminProducts.forEach(p => {
+        const c = p.category || 'Outros';
+        counts[c] = (counts[c] || 0) + 1;
+      });
+
+      bar.innerHTML = Object.entries(counts).map(([cat, count]) => {
+        const isActive = currentAdminCategoryFilter === cat;
+        const bg = isActive ? 'var(--primary)' : '#f1f5f9';
+        const color = isActive ? '#ffffff' : '#334155';
+        const border = isActive ? 'var(--primary)' : '#e2e8f0';
+
+        return `
+          <button onclick="handleAdminCategoryFilter('${escapeHtml(cat)}')" style="
+            display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.28rem 0.65rem;
+            font-size: 0.78rem; font-weight: 600; border-radius: 999px; cursor: pointer;
+            background: ${bg}; color: ${color}; border: 1px solid ${border}; transition: all 0.15s ease;
+          ">
+            <span>${escapeHtml(cat)}</span>
+            <span style="background: ${isActive ? 'rgba(255,255,255,0.25)' : '#cbd5e1'}; font-size: 0.7rem; padding: 0.05rem 0.35rem; border-radius: 999px;">${count}</span>
+          </button>
+        `;
+      }).join('');
+    }
+
     function renderProductsTable(products) {
-      const tbody = document.getElementById('productsTableBody');
-      const totalClicks = products.reduce((acc, p) => acc + (p.clicks || 0), 0);
-      const totalGross = products.reduce((acc, p) => acc + (parseFloat(p.price_discount) || 0), 0);
+      allAdminProducts = products || [];
+      const totalClicks = allAdminProducts.reduce((acc, p) => acc + (p.clicks || 0), 0);
+      const totalGross = allAdminProducts.reduce((acc, p) => acc + (parseFloat(p.price_discount) || 0), 0);
       const estCommission = totalGross * 0.08; // Estimativa de 8% média Shopee Afiliados
       
-      document.getElementById('statProducts').textContent = products.length;
+      document.getElementById('statProducts').textContent = allAdminProducts.length;
       document.getElementById('statClicks').textContent = totalClicks.toLocaleString('pt-BR');
       document.getElementById('statGrossValue').textContent = 'R$ ' + totalGross.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       document.getElementById('statEstCommission').textContent = 'R$ ' + estCommission.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-      renderCrmCharts(products);
+      renderCrmCharts(allAdminProducts);
+      renderCategoryFilterBar();
+      applyAdminProductFilters();
+    }
 
-      if (products.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2rem;">Nenhum produto cadastrado.</td></tr>';
+    function renderFilteredProductsList(products) {
+      const tbody = document.getElementById('productsTableBody');
+      const counterEl = document.getElementById('filteredProductsCount');
+      if (counterEl) counterEl.textContent = products.length;
+
+      if (!products || products.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2rem;">Nenhum produto encontrado nesta categoria.</td></tr>';
         return;
       }
 
@@ -1007,14 +1078,14 @@
             <div class="prod-mini">
               <img src="${p.image_url}" onerror="this.src='https://via.placeholder.com/50'">
               <div>
-                <div style="font-weight: 500;">${p.title}</div>
+                <div style="font-weight: 500;" title="${escapeHtml(p.title)}">${escapeHtml(p.title)}</div>
                 <div style="font-size: 0.75rem; color: var(--text-muted);">${p.sales_count || ''}</div>
               </div>
             </div>
           </td>
-          <td><span style="font-size: 0.85rem; color: #475569;">${p.category}</span></td>
+          <td><span style="font-size: 0.85rem; color: #475569; font-weight: 500;">${escapeHtml(p.category)}</span></td>
           <td>
-            <span style="font-weight: 700; color: var(--primary);">R$ ${p.price_discount.toFixed(2).replace('.', ',')}</span>
+            <span style="font-weight: 700; color: var(--primary);">R$ ${parseFloat(p.price_discount).toFixed(2).replace('.', ',')}</span>
           </td>
           <td>
             <span class="badge-status">
@@ -1023,11 +1094,14 @@
           </td>
           <td>
             <div style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
-              <button class="btn btn-outline" style="padding: 0.3rem 0.5rem; font-size: 0.75rem;" onclick="copyInternalLink(${p.id})" title="Copiar link da página de produto dentro do site">
-                <i class="fa-solid fa-file-lines"></i> Página Site
+              <button class="btn btn-primary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; background: #25d366; border: none; font-weight: 700;" onclick="sendProductFromTableToWhatsApp(${p.id})" title="Enviar este produto diretamente no Grupo VIP do WhatsApp">
+                <i class="fa-brands fa-whatsapp"></i> Enviar no Grupo
               </button>
-              <button class="btn btn-outline" style="padding: 0.3rem 0.5rem; font-size: 0.75rem;" onclick="copyShortLink(${p.id})" title="Copiar link direto de afiliado">
-                <i class="fa-solid fa-arrow-up-right-from-square"></i> Link Direto
+              <button class="btn btn-outline" style="padding: 0.3rem 0.5rem; font-size: 0.75rem;" onclick="copyInternalLink(${p.id})" title="Copiar link da página de produto dentro do site">
+                <i class="fa-solid fa-file-lines"></i> Site
+              </button>
+              <button class="btn btn-outline" style="padding: 0.3rem 0.5rem; font-size: 0.75rem;" onclick="copyShortLinkDirect('${escapeHtml(p.affiliate_link || '')}', ${p.id})" title="Copiar link oficial da Shopee (ao colar gera foto)">
+                <i class="fa-solid fa-link"></i> Link
               </button>
               <button class="btn btn-outline" style="padding: 0.3rem 0.5rem; font-size: 0.75rem; color: #ef4444;" onclick="deleteProduct(${p.id})" title="Excluir">
                 <i class="fa-solid fa-trash"></i>
@@ -1036,6 +1110,43 @@
           </td>
         </tr>
       `).join('');
+    }
+
+    // Enviar produto da tabela de produtos ativos diretamente no grupo VIP
+    async function sendProductFromTableToWhatsApp(productId) {
+      const prod = allAdminProducts.find(p => p.id === productId);
+      if (!prod) return alert('Produto não encontrado.');
+
+      if (!confirm(`Enviar este produto agora no Grupo VIP do WhatsApp?\n\n📦 ${prod.title}\n💰 R$ ${parseFloat(prod.price_discount).toFixed(2).replace('.', ',')}`)) return;
+
+      try {
+        const res = await fetch(API_BASE + '/api/admin/whatsapp/send-offer', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + authToken
+          },
+          body: JSON.stringify({ productId })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('✅ Produto enviado com sucesso no grupo do WhatsApp!');
+          loadWhatsAppBotStatus();
+        } else {
+          alert('Aviso: ' + (data.error || 'O robô está rodando no seu computador via bot_worker.js'));
+        }
+      } catch (err) {
+        alert('Erro ao enviar: ' + err.message);
+      }
+    }
+
+    function copyShortLinkDirect(affLink, id) {
+      const link = affLink || (window.location.origin + `/r/${id}`);
+      navigator.clipboard.writeText(link).then(() => {
+        alert('✅ Link oficial de afiliado copiado!\n\n' + link);
+      }).catch(() => {
+        prompt('Copie o link de afiliado:', link);
+      });
     }
 
     function renderCrmCharts(products) {
