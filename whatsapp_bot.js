@@ -264,11 +264,15 @@ async function dispatchOffer(specificProduct = null, isManual = false) {
 
   try {
     if (imageUrl && imageUrl.startsWith('http')) {
-      // Send with image
-      sendResult = await sock.sendMessage(targetGroupJid, {
-        image: { url: imageUrl },
-        caption: messageText
-      });
+      try {
+        sendResult = await sock.sendMessage(targetGroupJid, {
+          image: { url: imageUrl },
+          caption: messageText
+        });
+      } catch (mediaErr) {
+        console.warn(`[WhatsApp Bot] Aviso: falha ao carregar imagem (${mediaErr.message}). Enviando oferta formatada como texto...`);
+        sendResult = await sock.sendMessage(targetGroupJid, { text: messageText });
+      }
     } else {
       // Send text only
       sendResult = await sock.sendMessage(targetGroupJid, { text: messageText });

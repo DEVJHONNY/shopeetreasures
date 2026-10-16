@@ -649,16 +649,28 @@ const server = http.createServer(async (req, res) => {
 
         let product = null;
 
+        let targetLink = link;
+
+        // Se for link encurtado da Shopee (s.shopee.com.br ou shp.ee), segue redirecionamento para pegar URL completa
+        if (targetLink.includes('s.shopee.com.br') || targetLink.includes('shp.ee')) {
+          try {
+            const redirectRes = await fetch(targetLink, { redirect: 'follow' });
+            if (redirectRes && redirectRes.url && redirectRes.url !== targetLink) {
+              targetLink = redirectRes.url;
+            }
+          } catch (e) {}
+        }
+
         // 1. Tenta extrair ID numérico do produto (do site ou Shopee)
         let extractedId = null;
-        const matchSite = link.match(/\/produto\/(\d+)/i);
-        const matchShortR = link.match(/\/r\/(\d+)/i);
-        const matchShopeeItemId = link.match(/-i\.\d+\.(\d+)/i) || link.match(/product-i\.\d+\.(\d+)/i);
-        const matchDigits = link.match(/^(\d{5,})$/);
+        const matchSite = targetLink.match(/\/produto\/(\d+)/i);
+        const matchShortR = targetLink.match(/\/r\/(\d+)/i);
+        const matchShopeeItemId = targetLink.match(/-i\.\d+\.(\d+)/i) || targetLink.match(/product-i\.\d+\.(\d+)/i) || targetLink.match(/\/(\d{6,})\/(\d{6,})/);
+        const matchDigits = targetLink.match(/^(\d{5,})$/);
 
         if (matchSite) extractedId = matchSite[1];
         else if (matchShortR) extractedId = matchShortR[1];
-        else if (matchShopeeItemId) extractedId = matchShopeeItemId[1];
+        else if (matchShopeeItemId) extractedId = matchShopeeItemId[2] || matchShopeeItemId[1];
         else if (matchDigits) extractedId = matchDigits[1];
 
         // 2. Procura no banco de dados local por ID
@@ -667,8 +679,8 @@ const server = http.createServer(async (req, res) => {
         }
 
         // 3. Se não achou por ID, tenta buscar por link de afiliado caso tenha sido colado o link direto
-        if (!product && (link.includes('shopee.com') || link.includes('s.shopee.com.br'))) {
-          product = db.prepare('SELECT * FROM products WHERE affiliate_link = ?').get(link);
+        if (!product) {
+          product = db.prepare('SELECT * FROM products WHERE affiliate_link = ? OR affiliate_link LIKE ?').get(link, `%${link.split('?')[0]}%`);
         }
 
         // 4. Se ainda não achou no banco local, busca na API oficial do Netlify
@@ -714,15 +726,15 @@ const server = http.createServer(async (req, res) => {
         }
 
         // 5. Se for um link direto da Shopee e não temos no banco
-        if (!product && (link.includes('shopee.com') || link.includes('shp.ee'))) {
+        if (!product && (targetLink.includes('shopee.com') || targetLink.includes('shp.ee'))) {
           try {
             const affLink = await shopeeApi.generateAffiliateLink(link);
 
             // Tenta extrair o nome do produto pelo slug da URL da Shopee
-            const slugMatch = link.match(/shopee\.com\.br\/([^\/\?]+)-i\./i);
+            const slugMatch = targetLink.match(/shopee\.com\.br\/([^\/\?]+)-i\./i);
             let productTitle = 'Produto Selecionado na Shopee';
             let productPrice = 29.90;
-            let productImg = 'https://deo.shopeemobile.com/shopee/shopee-mobile-live-br/assets/ca5d12864c12916f05640b36e47ac5c9.png';
+            let productImg = 'https://cf.shopee.com.br/file/br-11134207-820lt-msq8pkzchmh355';
             let productShop = 'Loja Oficial Shopee';
             let productDiscount = 35;
             let productOrigPrice = 46.00;
