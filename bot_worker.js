@@ -7,6 +7,7 @@ const pino = require('pino');
 const QRCode = require('qrcode');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 const shopeeApi = require('./shopee_api');
 
 const SESSION_DIR = path.join(__dirname, 'wa_session');
@@ -57,10 +58,19 @@ const POSTED_HISTORY_FILE = path.join(__dirname, 'posted_deals.json');
 function loadPostedHistory() {
   try {
     if (fs.existsSync(POSTED_HISTORY_FILE)) {
-      const ids = JSON.parse(fs.readFileSync(POSTED_HISTORY_FILE, 'utf8'));
-      return new Set(ids.map(String));
+      const raw = fs.readFileSync(POSTED_HISTORY_FILE, 'utf8').trim();
+      if (!raw) return new Set();
+      const ids = JSON.parse(raw);
+      const set = new Set(ids.map(String));
+      console.log(`[Histórico] ${set.size} ofertas já enviadas carregadas do disco.`);
+      return set;
     }
-  } catch (e) {}
+  } catch (e) {
+    console.warn('[Histórico] Erro ao carregar histórico, começando do zero:', e.message);
+  }
+  // Cria o arquivo vazio se não existir
+  fs.writeFileSync(POSTED_HISTORY_FILE, '[]');
+  console.log('[Histórico] Arquivo posted_deals.json criado.');
   return new Set();
 }
 
@@ -69,7 +79,23 @@ function savePostedHistory(id) {
     postedItemIds.add(String(id));
     const arr = Array.from(postedItemIds).slice(-500); // mantém os últimos 500
     fs.writeFileSync(POSTED_HISTORY_FILE, JSON.stringify(arr, null, 2));
-  } catch (e) {}
+    console.log(`[Histórico] ID "${id}" salvo. Total no histórico: ${arr.length}`);
+  } catch (e) {
+    console.error('[Histórico] Erro ao salvar histórico:', e.message);
+  }
+}
+
+/**
+ * Gera um ID único estável para o produto.
+ * Usa itemId quando disponível; caso contrário usa hash do nome+preço.
+ */
+function getProductId(item) {
+  if (item.itemId && String(item.itemId) !== 'undefined' && String(item.itemId) !== '0') {
+    return String(item.itemId);
+  }
+  // Fallback: hash do nome + preço para garantir unicidade
+  const raw = `${item.productName || ''}__${item.priceMin || ''}`;
+  return 'hash_' + crypto.createHash('md5').update(raw).digest('hex').slice(0, 12);
 }
 
 const postedItemIds = loadPostedHistory();
@@ -96,8 +122,11 @@ async function fetchNextBestOffer() {
 
       for (const item of candidates) {
         if (!item || !item.productName || !item.offerLink) continue;
-        const itemIdStr = String(item.itemId);
-        if (postedItemIds.has(itemIdStr)) continue;
+        const itemIdStr = getProductId(item);
+        if (postedItemIds.has(itemIdStr)) {
+          // console.log(`[Histórico] Pulando produto já enviado: "${item.productName}" (ID: ${itemIdStr})`);
+          continue;
+        }
 
         const rating = parseFloat(item.ratingStar || 0);
         const discountPct = parseInt(item.priceDiscountRate || 0, 10);
