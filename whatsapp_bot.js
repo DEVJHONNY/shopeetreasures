@@ -257,7 +257,7 @@ async function dispatchOffer(specificProduct = null, isManual = false) {
     throw new Error('Nenhum produto disponível para envio. Gere novas promoções pelo robô.');
   }
 
-  const messageText = formatProductOffer(product);
+  const messageText = (product && product.customMessage) ? product.customMessage : formatProductOffer(product);
   const imageUrl = product.imageUrl || product.image_url;
 
   let sendResult = null;
@@ -375,5 +375,6 @@ module.exports = {
   dispatchOffer,
   getStatus,
   setConfig,
-  resolveGroupJid
+  resolveGroupJid,
+  formatProductOffer
 };

@@ -572,6 +572,34 @@
       </div>
     </div>
 
+    <!-- Enviar Produto por Link no Grupo VIP -->
+    <div class="panel" style="border-left: 4px solid #25d366; background: #ffffff;">
+      <div class="panel-header" style="flex-wrap: wrap; gap: 0.5rem;">
+        <div class="panel-title" style="display: flex; align-items: center; gap: 0.5rem;">
+          <i class="fa-brands fa-whatsapp" style="color: #25d366; font-size: 1.25rem;"></i>
+          <span>Enviar Produto por Link no Grupo VIP (Disparo Direto)</span>
+        </div>
+        <span class="badge" style="background: #dcfce7; color: #15803d; font-size: 0.75rem; padding: 0.25rem 0.65rem; border-radius: 999px; font-weight: 700;">
+          ⚡ Formatação Automática + Link Oficial
+        </span>
+      </div>
+
+      <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 0.85rem; line-height: 1.4;">
+        Viu algum produto no site ou na Shopee que quer mandar agora no grupo? Cole o link abaixo! O sistema busca a foto, os preços, desconto e link oficial de afiliado, gerando o botão de envio pronto:
+      </p>
+
+      <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+        <input type="text" id="quickLinkInput" placeholder="Ex: https://shopeetreasures-vip.netlify.app/produto/20398103573 ou link da Shopee..." style="flex: 1; min-width: 280px; height: 42px; padding: 0.5rem 0.85rem; border: 1px solid var(--border); border-radius: var(--radius); font-size: 0.88rem;">
+        <button id="btnQuickLinkSearch" class="btn btn-primary" onclick="handleQuickLinkPreview()" style="height: 42px; background: #25d366; border: none; font-weight: 700; display: inline-flex; align-items: center; gap: 0.4rem; padding: 0 1.25rem;">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <span>Carregar Produto</span>
+        </button>
+      </div>
+
+      <!-- Área de Prévia Dinâmica do Produto e Mensagem -->
+      <div id="quickLinkPreviewArea" style="display: none; margin-top: 1.25rem; border-top: 1px solid var(--border); padding-top: 1.25rem;"></div>
+    </div>
+
     <!-- Conversor de Links -->
     <div class="panel">
       <div class="panel-header">
@@ -949,6 +977,167 @@
       } catch (e) {
         alert('Erro ao enviar: ' + e.message);
       }
+    }
+
+    // ==========================================
+    // DISPARO RÁPIDO DE OFERTA POR LINK
+    // ==========================================
+    let currentQuickLinkProduct = null;
+    let currentQuickLinkMessage = '';
+
+    async function handleQuickLinkPreview() {
+      const input = document.getElementById('quickLinkInput');
+      const btn = document.getElementById('btnQuickLinkSearch');
+      const previewArea = document.getElementById('quickLinkPreviewArea');
+      const link = (input.value || '').trim();
+
+      if (!link) {
+        return alert('Por favor, cole o link do produto do site ou da Shopee.');
+      }
+
+      const origText = btn.innerHTML;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Buscando...</span>';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch(API_BASE + '/api/admin/whatsapp/preview-product-link', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + authToken
+          },
+          body: JSON.stringify({ link })
+        });
+        const data = await res.json();
+
+        if (!data.success) {
+          throw new Error(data.error || 'Produto não encontrado.');
+        }
+
+        currentQuickLinkProduct = data.product;
+        currentQuickLinkMessage = data.messageText;
+
+        const p = data.product;
+        const price = parseFloat(p.price_discount || p.priceCurrent || 0);
+        const origPrice = parseFloat(p.price_original || p.originalPrice || 0);
+        const discountPct = parseInt(p.discount_pct || p.discountPct || 0, 10);
+        const priceFmt = price.toFixed(2).replace('.', ',');
+        const origPriceFmt = origPrice > 0 ? `R$ ${origPrice.toFixed(2).replace('.', ',')}` : '';
+        const discFmt = discountPct > 0 ? `-${discountPct}% OFF` : '';
+        const imgUrl = p.image_url || p.imageUrl || '';
+        const rating = p.rating || p.ratingStar || '4.8';
+        const sales = p.sales_count || p.salesCount || 'Destaque Oficial';
+        const shop = p.shop_name || p.shopName || 'Loja Shopee';
+        const affLink = p.affiliate_link || p.offerLink || '';
+
+        previewArea.style.display = 'block';
+        previewArea.innerHTML = `
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.25rem; background: #f8fafc; border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem;">
+            <!-- Coluna 1: Dados do Produto -->
+            <div>
+              <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                ${imgUrl ? `<img src="${escapeHtml(imgUrl)}" alt="Foto" style="width: 105px; height: 105px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); flex-shrink: 0; background: #fff;">` : ''}
+                <div style="flex: 1; min-width: 0;">
+                  <span style="font-size: 0.72rem; font-weight: 700; color: #15803d; background: #dcfce7; padding: 0.15rem 0.5rem; border-radius: 4px; display: inline-block; margin-bottom: 0.35rem;">
+                    ✅ Produto Carregado & Sincronizado
+                  </span>
+                  <h4 style="font-size: 0.95rem; font-weight: 700; color: #0f172a; line-height: 1.35; margin-bottom: 0.35rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;" title="${escapeHtml(p.title || p.productName)}">
+                    ${escapeHtml(p.title || p.productName)}
+                  </h4>
+                  <div style="font-size: 0.78rem; color: #64748b; margin-bottom: 0.5rem;">
+                    <i class="fa-solid fa-store" style="color: var(--primary);"></i> ${escapeHtml(shop)} | ⭐ ${rating} | 🔥 ${sales}
+                  </div>
+                  <div style="display: flex; align-items: baseline; gap: 0.5rem;">
+                    ${origPriceFmt ? `<span style="font-size: 0.8rem; text-decoration: line-through; color: #94a3b8;">${origPriceFmt}</span>` : ''}
+                    <span style="font-size: 1.25rem; font-weight: 900; color: var(--primary);">R$ ${priceFmt}</span>
+                    ${discFmt ? `<span style="font-size: 0.75rem; background: #fee2e2; color: #dc2626; font-weight: 800; padding: 0.1rem 0.4rem; border-radius: 4px;">${discFmt}</span>` : ''}
+                  </div>
+                </div>
+              </div>
+
+              <div style="margin-top: 1rem; font-size: 0.78rem; color: #475569; word-break: break-all; background: #fff; padding: 0.6rem; border-radius: 4px; border: 1px solid #e2e8f0;">
+                <strong style="color: #0f172a;">🔗 Link Oficial de Afiliado Shopee:</strong><br>
+                <a href="${escapeHtml(affLink)}" target="_blank" style="color: var(--primary); font-weight: 600; text-decoration: none;">${escapeHtml(affLink)}</a>
+              </div>
+            </div>
+
+            <!-- Coluna 2: Prévia Formatada para WhatsApp + Botão de Envio -->
+            <div style="display: flex; flex-direction: column;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                <label style="font-size: 0.82rem; font-weight: 700; color: #0f172a; margin: 0;">
+                  <i class="fa-brands fa-whatsapp" style="color: #25d366;"></i> Mensagem Formatada para o Grupo (Editável):
+                </label>
+                <span style="font-size: 0.72rem; color: #64748b;">Com foto inclusa</span>
+              </div>
+              <textarea id="quickLinkCustomText" style="width: 100%; height: 165px; font-family: monospace; font-size: 0.82rem; padding: 0.65rem; border: 1px solid var(--border); border-radius: var(--radius); background: #ffffff; resize: vertical; margin-bottom: 0.75rem; line-height: 1.4;">${escapeHtml(data.messageText)}</textarea>
+
+              <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <button id="btnSendQuickOffer" class="btn btn-primary" onclick="dispatchQuickLinkOffer()" style="flex: 1; min-width: 220px; height: 44px; background: #25d366; border: none; font-size: 0.95rem; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; box-shadow: 0 4px 12px rgba(37,211,102,0.35);">
+                  <i class="fa-brands fa-whatsapp" style="font-size: 1.25rem;"></i>
+                  <span>Enviar no Grupo VIP Agora</span>
+                </button>
+                <button class="btn btn-outline" onclick="copyQuickLinkMessage()" style="height: 44px; padding: 0 1rem;" title="Copiar texto formatado">
+                  <i class="fa-solid fa-copy"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+
+        // Se o produto foi salvo/sincronizado, atualiza a vitrine da tabela
+        if (typeof loadAdminData === 'function') loadAdminData();
+      } catch (err) {
+        alert('Erro ao carregar produto: ' + err.message);
+      } finally {
+        btn.innerHTML = origText;
+        btn.disabled = false;
+      }
+    }
+
+    async function dispatchQuickLinkOffer() {
+      if (!currentQuickLinkProduct) return alert('Nenhum produto selecionado.');
+      const btn = document.getElementById('btnSendQuickOffer');
+      const customText = document.getElementById('quickLinkCustomText')?.value || '';
+
+      const origText = btn.innerHTML;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Enviando no Grupo...</span>';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch(API_BASE + '/api/admin/whatsapp/send-offer', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + authToken
+          },
+          body: JSON.stringify({
+            product: currentQuickLinkProduct,
+            customMessage: customText
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('🚀 Oferta enviada com sucesso no Grupo VIP do WhatsApp!');
+          loadWhatsAppBotStatus();
+        } else {
+          alert('Aviso: ' + (data.error || 'Verifique se o robô WhatsApp está conectado no painel.'));
+        }
+      } catch (err) {
+        alert('Erro ao enviar oferta: ' + err.message);
+      } finally {
+        btn.innerHTML = origText;
+        btn.disabled = false;
+      }
+    }
+
+    function copyQuickLinkMessage() {
+      const text = document.getElementById('quickLinkCustomText')?.value || '';
+      if (!text) return;
+      navigator.clipboard.writeText(text).then(() => {
+        alert('✅ Mensagem formatada copiada com sucesso!');
+      }).catch(() => {
+        prompt('Copie a mensagem:', text);
+      });
     }
 
     async function triggerManualSync() {

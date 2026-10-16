@@ -639,15 +639,164 @@ const server = http.createServer(async (req, res) => {
       }
     }
 
-    // Enviar oferta especÃ­fica selecionada pelo painel
-    if (pathname === '/api/admin/whatsapp/send-offer' && req.method === 'POST') {
-      if (!checkAuth(req)) return sendJson(res, 401, { error: 'NÃ£o autorizado' });
+    // Buscar produto por link (do site ou da Shopee) e gerar prévia pronta para WhatsApp
+    if (pathname === '/api/admin/whatsapp/preview-product-link' && req.method === 'POST') {
+      if (!checkAuth(req)) return sendJson(res, 401, { error: 'Não autorizado' });
       try {
         const body = await parseBody(req);
-        const prodId = body.productId;
-        if (!prodId) throw new Error('productId nÃ£o informado');
-        const product = db.prepare('SELECT * FROM products WHERE id = ? AND is_active = 1').get(prodId);
-        if (!product) throw new Error('Produto nÃ£o encontrado na base de dados');
+        const link = (body.link || '').trim();
+        if (!link) throw new Error('Por favor, informe o link do produto.');
+
+        let product = null;
+
+        // 1. Tenta extrair ID numérico do produto (do site ou Shopee)
+        let extractedId = null;
+        const matchSite = link.match(/\/produto\/(\d+)/i);
+        const matchShortR = link.match(/\/r\/(\d+)/i);
+        const matchShopeeItemId = link.match(/-i\.\d+\.(\d+)/i) || link.match(/product-i\.\d+\.(\d+)/i);
+        const matchDigits = link.match(/^(\d{5,})$/);
+
+        if (matchSite) extractedId = matchSite[1];
+        else if (matchShortR) extractedId = matchShortR[1];
+        else if (matchShopeeItemId) extractedId = matchShopeeItemId[1];
+        else if (matchDigits) extractedId = matchDigits[1];
+
+        // 2. Procura no banco de dados local por ID
+        if (extractedId) {
+          product = db.prepare('SELECT * FROM products WHERE id = ?').get(extractedId);
+        }
+
+        // 3. Se não achou por ID, tenta buscar por link de afiliado caso tenha sido colado o link direto
+        if (!product && (link.includes('shopee.com') || link.includes('s.shopee.com.br'))) {
+          product = db.prepare('SELECT * FROM products WHERE affiliate_link = ?').get(link);
+        }
+
+        // 4. Se ainda não achou no banco local, busca na API oficial do Netlify
+        if (!product && extractedId) {
+          try {
+            const netlifyRes = await fetch('https://shopeetreasures-vip.netlify.app/api/products');
+            if (netlifyRes.ok) {
+              const netlifyProducts = await netlifyRes.json();
+              const found = netlifyProducts.find(p => String(p.id) === String(extractedId));
+              if (found) {
+                // Insere no banco local para ficar disponível também na vitrine admin!
+                const newId = upsertShopeeProduct({
+                  itemId: found.id,
+                  productName: found.title,
+                  priceMin: found.price_discount,
+                  priceMax: found.price_original || found.price_discount,
+                  priceDiscountRate: found.discount_pct,
+                  imageUrl: found.image_url,
+                  offerLink: found.affiliate_link,
+                  sales: found.sales_count,
+                  ratingStar: found.rating,
+                  shopName: found.shop_name
+                }, found.category || 'Destaques');
+
+                product = db.prepare('SELECT * FROM products WHERE id = ?').get(newId) || {
+                  id: found.id,
+                  title: found.title,
+                  price_discount: found.price_discount,
+                  price_original: found.price_original,
+                  discount_pct: found.discount_pct,
+                  category: found.category || 'Destaques',
+                  image_url: found.image_url,
+                  affiliate_link: found.affiliate_link,
+                  sales_count: found.sales_count,
+                  rating: found.rating,
+                  shop_name: found.shop_name
+                };
+              }
+            }
+          } catch (e) {
+            console.warn('[PreviewLink] Erro ao consultar Netlify API:', e.message);
+          }
+        }
+
+        // 5. Se for um link direto da Shopee e não temos no banco
+        if (!product && (link.includes('shopee.com') || link.includes('shp.ee'))) {
+          try {
+            const affLink = await shopeeApi.generateAffiliateLink(link);
+
+            // Tenta extrair o nome do produto pelo slug da URL da Shopee
+            const slugMatch = link.match(/shopee\.com\.br\/([^\/\?]+)-i\./i);
+            let productTitle = 'Produto Selecionado na Shopee';
+            let productPrice = 29.90;
+            let productImg = 'https://deo.shopeemobile.com/shopee/shopee-mobile-live-br/assets/ca5d12864c12916f05640b36e47ac5c9.png';
+            let productShop = 'Loja Oficial Shopee';
+            let productDiscount = 35;
+            let productOrigPrice = 46.00;
+
+            if (slugMatch) {
+              const kw = decodeURIComponent(slugMatch[1]).replace(/-/g, ' ').trim();
+              productTitle = kw;
+              try {
+                const nodes = await shopeeApi.fetchTopOffers({ keyword: kw.slice(0, 30), limit: 5 });
+                if (nodes && nodes.length > 0) {
+                  const n = nodes[0];
+                  productTitle = n.productName || productTitle;
+                  productPrice = parseFloat(n.priceMin || productPrice);
+                  productDiscount = parseInt(n.priceDiscountRate || productDiscount, 10);
+                  if (productDiscount > 0 && productPrice > 0) {
+                    productOrigPrice = productPrice / (1 - (productDiscount / 100));
+                  }
+                  productImg = n.imageUrl || productImg;
+                  productShop = n.shopName || productShop;
+                }
+              } catch (e) {}
+            }
+
+            product = {
+              id: 'custom_' + Date.now(),
+              title: productTitle,
+              price_discount: productPrice,
+              price_original: productOrigPrice,
+              discount_pct: productDiscount,
+              category: 'Achadinhos',
+              image_url: productImg,
+              affiliate_link: affLink,
+              sales_count: 'Destaque Oficial',
+              rating: 4.9,
+              shop_name: productShop
+            };
+          } catch (e) {
+            console.warn('[PreviewLink] Erro ao converter link Shopee:', e.message);
+          }
+        }
+
+        if (!product) {
+          throw new Error('Não foi possível localizar as informações do produto com o link informado. Verifique se o link está correto.');
+        }
+
+        const messageText = whatsappBot.formatProductOffer(product);
+        return sendJson(res, 200, {
+          success: true,
+          product,
+          messageText
+        });
+      } catch (err) {
+        return sendJson(res, 400, { success: false, error: err.message });
+      }
+    }
+
+    // Enviar oferta específica selecionada pelo painel ou customizada por link
+    if (pathname === '/api/admin/whatsapp/send-offer' && req.method === 'POST') {
+      if (!checkAuth(req)) return sendJson(res, 401, { error: 'Não autorizado' });
+      try {
+        const body = await parseBody(req);
+        let product = null;
+        if (body.productId) {
+          product = db.prepare('SELECT * FROM products WHERE id = ? AND is_active = 1').get(body.productId);
+        }
+        if (!product && body.product) {
+          product = body.product;
+        }
+        if (!product) throw new Error('Produto não informado ou não encontrado na base de dados');
+
+        if (body.customMessage) {
+          product.customMessage = body.customMessage;
+        }
+
         const result = await whatsappBot.dispatchOffer(product, true);
         return sendJson(res, 200, result);
       } catch (err) {
