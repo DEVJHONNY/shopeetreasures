@@ -56,7 +56,7 @@ function checkAuth(req) {
   return token === currentPassword;
 }
 
-// Helper para formatação de contagem de vendas com alto apelo visual
+// Helper para formataÃ§Ã£o de contagem de vendas com alto apelo visual
 function formatSales(sales) {
   const num = parseInt(sales, 10);
   if (!num || isNaN(num) || num <= 0) {
@@ -93,7 +93,7 @@ function upsertShopeeProduct(item, defaultCategory = 'Achadinhos') {
 
   const salesFormatted = formatSales(item.sales);
   const rating = parseFloat(item.ratingStar || 4.8);
-  const badge = rating >= 4.8 ? '🔥 Top Escolha' : '⭐ Verificado';
+  const badge = rating >= 4.8 ? 'ðŸ”¥ Top Escolha' : 'â­ Verificado';
   const shopName = item.shopName || 'Loja Verificada na Shopee';
 
   const existing = db.prepare('SELECT id FROM products WHERE title = ?').get(item.productName);
@@ -154,20 +154,36 @@ let cronStatus = {
 async function executeAutoSync() {
   if (cronStatus.isSyncing) return;
   cronStatus.isSyncing = true;
-  console.log(`[Auto-Cron] Sincronização periódica iniciada (${new Date().toLocaleString('pt-BR')})...`);
+  console.log(`[Auto-Cron] SincronizaÃ§Ã£o periÃ³dica iniciada (${new Date().toLocaleString('pt-BR')})...`);
 
   try {
     const targets = [
-      { keyword: '', category: 'Destaques' },
-      { keyword: 'fone bluetooth', category: 'Eletrônicos' },
+      { keyword: '',                   category: 'Destaques' },
+      { keyword: 'fone bluetooth',     category: 'EletrÃ´nicos' },
+      { keyword: 'smartwatch',         category: 'EletrÃ´nicos' },
+      { keyword: 'cabo usb',           category: 'EletrÃ´nicos' },
+      { keyword: 'mouse sem fio',      category: 'EletrÃ´nicos' },
       { keyword: 'utilidades cozinha', category: 'Casa & Cozinha' },
-      { keyword: 'skincare beleza', category: 'Beleza' }
+      { keyword: 'panela eletrica',    category: 'Casa & Cozinha' },
+      { keyword: 'organizador',        category: 'Casa & Cozinha' },
+      { keyword: 'skincare beleza',    category: 'Beleza' },
+      { keyword: 'maquiagem',          category: 'Beleza' },
+      { keyword: 'perfume',            category: 'Beleza' },
+      { keyword: 'camiseta masculina', category: 'Moda' },
+      { keyword: 'tenis feminino',     category: 'Moda' },
+      { keyword: 'mochila',            category: 'Moda' },
+      { keyword: 'copo termico',       category: 'AcessÃ³rios' },
+      { keyword: 'garrafa inox',       category: 'AcessÃ³rios' },
+      { keyword: 'suporte celular',    category: 'AcessÃ³rios' },
+      { keyword: 'massageador',        category: 'SaÃºde & Esporte' },
+      { keyword: 'halteres',           category: 'SaÃºde & Esporte' },
+      { keyword: 'brinquedo infantil', category: 'BebÃªs & CrianÃ§as' },
     ];
 
     let totalImported = 0;
     for (const t of targets) {
       try {
-        const nodes = await shopeeApi.fetchTopOffers({ keyword: t.keyword, limit: 10 });
+        const nodes = await shopeeApi.fetchTopOffers({ keyword: t.keyword, limit: 30 });
         for (const item of nodes) {
           const pid = upsertShopeeProduct(item, t.category);
           if (pid) totalImported++;
@@ -184,9 +200,9 @@ async function executeAutoSync() {
     db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('last_cron_sync', ?)").run(cronStatus.lastSync);
     db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('last_cron_count', ?)").run(String(totalImported));
 
-    console.log(`[Auto-Cron] Sincronização concluída com sucesso! ${totalImported} produtos sincronizados.`);
+    console.log(`[Auto-Cron] SincronizaÃ§Ã£o concluÃ­da com sucesso! ${totalImported} produtos sincronizados.`);
   } catch (err) {
-    console.error('[Auto-Cron] Erro na execução:', err);
+    console.error('[Auto-Cron] Erro na execuÃ§Ã£o:', err);
   } finally {
     cronStatus.isSyncing = false;
   }
@@ -220,7 +236,7 @@ const server = http.createServer(async (req, res) => {
 
   try {
     // ==========================================
-    // ROTAS PÚBLICAS
+    // ROTAS PÃšBLICAS
     // ==========================================
 
     if (pathname === '/api/settings' && req.method === 'GET') {
@@ -231,7 +247,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (pathname === '/api/settings' && req.method === 'POST') {
-      if (!checkAuth(req)) return sendJson(res, 401, { error: 'Não autorizado' });
+      if (!checkAuth(req)) return sendJson(res, 401, { error: 'NÃ£o autorizado' });
       const body = await parseBody(req);
       const stmt = db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)');
       for (const [k, v] of Object.entries(body)) {
@@ -248,7 +264,7 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, ['Todos', ...categories]);
     }
 
-    // OFERTAS RELÂMPAGO (FLASH SALE COM CONTAGEM REGRESSIVA)
+    // OFERTAS RELÃ‚MPAGO (FLASH SALE COM CONTAGEM REGRESSIVA)
     if (pathname === '/api/homepage/flash-sale' && req.method === 'GET') {
       const flashOffers = db.prepare(`
         SELECT * FROM products 
@@ -270,12 +286,12 @@ const server = http.createServer(async (req, res) => {
 
       let liveProductIds = [];
 
-      // 1. Se o usuário buscou por palavra-chave, consulta SEMPRE a Shopee Open API em tempo real!
+      // 1. Se o usuÃ¡rio buscou por palavra-chave, consulta SEMPRE a Shopee Open API em tempo real!
       if (q) {
         try {
           const liveNodes = await shopeeApi.fetchTopOffers({ keyword: q, limit: 30 });
           for (const item of liveNodes) {
-            // Salva itens pesquisados com categoria 'Busca' para não poluir a vitrine principal
+            // Salva itens pesquisados com categoria 'Busca' para nÃ£o poluir a vitrine principal
             const pid = upsertShopeeProduct(item, 'Busca');
             if (pid) liveProductIds.push(pid);
           }
@@ -293,8 +309,8 @@ const server = http.createServer(async (req, res) => {
           products = db.prepare(`SELECT * FROM products WHERE id IN (${placeholders}) AND is_active = 1`).all(...liveProductIds);
         }
 
-        // B) Busca também por palavras-chave na base local (split por espaços e símbolos)
-        const words = q.toLowerCase().replace(/[^a-z0-9áéíóúâêîôûãõç]/gi, ' ').split(/\s+/).filter(w => w.length >= 2);
+        // B) Busca tambÃ©m por palavras-chave na base local (split por espaÃ§os e sÃ­mbolos)
+        const words = q.toLowerCase().replace(/[^a-z0-9Ã¡Ã©Ã­Ã³ÃºÃ¢ÃªÃ®Ã´Ã»Ã£ÃµÃ§]/gi, ' ').split(/\s+/).filter(w => w.length >= 2);
         if (words.length > 0) {
           let sql = 'SELECT * FROM products WHERE is_active = 1 AND (';
           sql += words.map(() => '(title LIKE ? OR description LIKE ?)').join(' OR ');
@@ -318,7 +334,7 @@ const server = http.createServer(async (req, res) => {
           }
         }
       } else {
-        // C) Vitrine Principal Limpa (sem poluição de buscas anteriores)
+        // C) Vitrine Principal Limpa (sem poluiÃ§Ã£o de buscas anteriores)
         let query = 'SELECT * FROM products WHERE is_active = 1';
         const params = [];
 
@@ -326,7 +342,7 @@ const server = http.createServer(async (req, res) => {
           query += ' AND category = ?';
           params.push(cat);
         } else {
-          // Na página inicial geral, exibe apenas os produtos reais catalogados
+          // Na pÃ¡gina inicial geral, exibe apenas os produtos reais catalogados
           query += " AND category != 'Busca'";
         }
 
@@ -339,18 +355,18 @@ const server = http.createServer(async (req, res) => {
         } else if (sort === 'sales_desc') {
           query += ' ORDER BY clicks DESC, id DESC';
         } else {
-          query += " ORDER BY (CASE WHEN category = 'Destaques' OR category = 'Achadinhos VIP' THEN 1 ELSE 2 END), rating DESC, id DESC LIMIT 60";
+          query += " ORDER BY (CASE WHEN category = 'Destaques' OR category = 'Achadinhos VIP' THEN 1 ELSE 2 END), rating DESC, id DESC";
         }
 
         products = db.prepare(query).all(...params);
       }
 
-      // Filtro de preço
+      // Filtro de preÃ§o
       if (minPrice > 0 || maxPrice < 999999) {
         products = products.filter(p => p.price_discount >= minPrice && p.price_discount <= maxPrice);
       }
 
-      // Ordenação
+      // OrdenaÃ§Ã£o
       if (sort === 'price_asc') {
         products.sort((a, b) => a.price_discount - b.price_discount);
       } else if (sort === 'price_desc') {
@@ -368,7 +384,7 @@ const server = http.createServer(async (req, res) => {
       const id = matchProductDetail[1];
       const product = db.prepare('SELECT * FROM products WHERE id = ? AND is_active = 1').get(id);
       if (!product) {
-        return sendJson(res, 404, { error: 'Produto não encontrado' });
+        return sendJson(res, 404, { error: 'Produto nÃ£o encontrado' });
       }
       return sendJson(res, 200, product);
     }
@@ -398,7 +414,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     // ==========================================
-    // ROBÔ DE OFERTAS WHATSAPP
+    // ROBÃ” DE OFERTAS WHATSAPP
     // ==========================================
     if (pathname === '/api/promo/latest' && req.method === 'GET') {
       if (fs.existsSync(promoBot.OUTPUT_FILE)) {
@@ -452,7 +468,7 @@ const server = http.createServer(async (req, res) => {
             const placeholders = loadedIds.map(() => '?').join(',');
             returnProducts = db.prepare(`SELECT * FROM products WHERE id IN (${placeholders}) AND is_active = 1`).all(...loadedIds);
           }
-          const words = q.toLowerCase().replace(/[^a-z0-9áéíóúâêîôûãõç]/gi, ' ').split(/\s+/).filter(w => w.length >= 2);
+          const words = q.toLowerCase().replace(/[^a-z0-9Ã¡Ã©Ã­Ã³ÃºÃ¢ÃªÃ®Ã´Ã»Ã£ÃµÃ§]/gi, ' ').split(/\s+/).filter(w => w.length >= 2);
           if (words.length > 0) {
             let sql = 'SELECT * FROM products WHERE is_active = 1 AND (';
             sql += words.map(() => '(title LIKE ? OR description LIKE ?)').join(' OR ');
@@ -475,7 +491,7 @@ const server = http.createServer(async (req, res) => {
             query += ' AND category = ?';
             params.push(cat);
           }
-          query += ' ORDER BY id DESC LIMIT 120';
+          query += ' ORDER BY id DESC';
           returnProducts = db.prepare(query).all(...params);
         }
 
@@ -486,12 +502,12 @@ const server = http.createServer(async (req, res) => {
     }
 
     // ==========================================
-    // AUTOMAÇÃO COM A SHOPEE OPEN API
+    // AUTOMAÃ‡ÃƒO COM A SHOPEE OPEN API
     // ==========================================
 
     if (pathname === '/api/shopee/convert-link' && req.method === 'POST') {
       const body = await parseBody(req);
-      if (!body.url) return sendJson(res, 400, { error: 'URL da Shopee não informada.' });
+      if (!body.url) return sendJson(res, 400, { error: 'URL da Shopee nÃ£o informada.' });
 
       try {
         const shortLink = await shopeeApi.generateAffiliateLink(body.url);
@@ -547,7 +563,7 @@ const server = http.createServer(async (req, res) => {
 
         return sendJson(res, 200, { success: true, imported, total: nodes.length });
       } catch (err) {
-        console.error('Erro na sincronização Shopee:', err);
+        console.error('Erro na sincronizaÃ§Ã£o Shopee:', err);
         return sendJson(res, 500, { success: false, error: err.message });
       }
     }
@@ -557,18 +573,18 @@ const server = http.createServer(async (req, res) => {
     // ==========================================
 
     if (pathname === '/api/admin/cron-status' && req.method === 'GET') {
-      if (!checkAuth(req)) return sendJson(res, 401, { error: 'Não autorizado' });
+      if (!checkAuth(req)) return sendJson(res, 401, { error: 'NÃ£o autorizado' });
       return sendJson(res, 200, cronStatus);
     }
 
     if (pathname === '/api/admin/cron-trigger' && req.method === 'POST') {
-      if (!checkAuth(req)) return sendJson(res, 401, { error: 'Não autorizado' });
+      if (!checkAuth(req)) return sendJson(res, 401, { error: 'NÃ£o autorizado' });
       executeAutoSync();
       return sendJson(res, 200, { success: true, message: 'Auto-sync disparado em segundo plano.' });
     }
 
     if (pathname === '/api/admin/cron-config' && req.method === 'POST') {
-      if (!checkAuth(req)) return sendJson(res, 401, { error: 'Não autorizado' });
+      if (!checkAuth(req)) return sendJson(res, 401, { error: 'NÃ£o autorizado' });
       const body = await parseBody(req);
       const hours = parseInt(body.intervalHours) || 6;
 
@@ -583,28 +599,28 @@ const server = http.createServer(async (req, res) => {
     }
 
     // ==========================================
-    // ROTAS DO ROBÔ AUTOMÁTICO WHATSAPP
+    // ROTAS DO ROBÃ” AUTOMÃTICO WHATSAPP
     // ==========================================
 
     if (pathname === '/api/admin/whatsapp/status' && req.method === 'GET') {
-      if (!checkAuth(req)) return sendJson(res, 401, { error: 'Não autorizado' });
+      if (!checkAuth(req)) return sendJson(res, 401, { error: 'NÃ£o autorizado' });
       return sendJson(res, 200, whatsappBot.getStatus());
     }
 
     if (pathname === '/api/admin/whatsapp/connect' && req.method === 'POST') {
-      if (!checkAuth(req)) return sendJson(res, 401, { error: 'Não autorizado' });
+      if (!checkAuth(req)) return sendJson(res, 401, { error: 'NÃ£o autorizado' });
       whatsappBot.initWhatsApp(true);
-      return sendJson(res, 200, { success: true, message: 'Iniciando conexão com WhatsApp.' });
+      return sendJson(res, 200, { success: true, message: 'Iniciando conexÃ£o com WhatsApp.' });
     }
 
     if (pathname === '/api/admin/whatsapp/disconnect' && req.method === 'POST') {
-      if (!checkAuth(req)) return sendJson(res, 401, { error: 'Não autorizado' });
+      if (!checkAuth(req)) return sendJson(res, 401, { error: 'NÃ£o autorizado' });
       await whatsappBot.disconnectWhatsApp();
       return sendJson(res, 200, { success: true, message: 'WhatsApp desconectado com sucesso.' });
     }
 
     if (pathname === '/api/admin/whatsapp/config' && req.method === 'POST') {
-      if (!checkAuth(req)) return sendJson(res, 401, { error: 'Não autorizado' });
+      if (!checkAuth(req)) return sendJson(res, 401, { error: 'NÃ£o autorizado' });
       const body = await parseBody(req);
       const newStatus = whatsappBot.setConfig({
         autoPostEnabled: body.autoPostEnabled,
@@ -614,7 +630,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (pathname === '/api/admin/whatsapp/send-test' && req.method === 'POST') {
-      if (!checkAuth(req)) return sendJson(res, 401, { error: 'Não autorizado' });
+      if (!checkAuth(req)) return sendJson(res, 401, { error: 'NÃ£o autorizado' });
       try {
         const result = await whatsappBot.dispatchOffer(null, true);
         return sendJson(res, 200, result);
@@ -623,15 +639,15 @@ const server = http.createServer(async (req, res) => {
       }
     }
 
-    // Enviar oferta específica selecionada pelo painel
+    // Enviar oferta especÃ­fica selecionada pelo painel
     if (pathname === '/api/admin/whatsapp/send-offer' && req.method === 'POST') {
-      if (!checkAuth(req)) return sendJson(res, 401, { error: 'Não autorizado' });
+      if (!checkAuth(req)) return sendJson(res, 401, { error: 'NÃ£o autorizado' });
       try {
         const body = await parseBody(req);
         const prodId = body.productId;
-        if (!prodId) throw new Error('productId não informado');
+        if (!prodId) throw new Error('productId nÃ£o informado');
         const product = db.prepare('SELECT * FROM products WHERE id = ? AND is_active = 1').get(prodId);
-        if (!product) throw new Error('Produto não encontrado na base de dados');
+        if (!product) throw new Error('Produto nÃ£o encontrado na base de dados');
         const result = await whatsappBot.dispatchOffer(product, true);
         return sendJson(res, 200, result);
       } catch (err) {
@@ -656,18 +672,18 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (pathname === '/api/admin/products' && req.method === 'GET') {
-      if (!checkAuth(req)) return sendJson(res, 401, { error: 'Não autorizado' });
+      if (!checkAuth(req)) return sendJson(res, 401, { error: 'NÃ£o autorizado' });
       const products = db.prepare('SELECT * FROM products ORDER BY id DESC').all();
       return sendJson(res, 200, products);
     }
 
     if (pathname === '/api/admin/products' && req.method === 'POST') {
-      if (!checkAuth(req)) return sendJson(res, 401, { error: 'Não autorizado' });
+      if (!checkAuth(req)) return sendJson(res, 401, { error: 'NÃ£o autorizado' });
       const body = await parseBody(req);
 
       const { title, description, price_original, price_discount, category, image_url, affiliate_link, badge, sales_count, rating, shop_name, video_url } = body;
       if (!title || !price_discount || !image_url || !affiliate_link) {
-        return sendJson(res, 400, { error: 'Preencha título, preço da oferta, imagem e link de afiliado.' });
+        return sendJson(res, 400, { error: 'Preencha tÃ­tulo, preÃ§o da oferta, imagem e link de afiliado.' });
       }
 
       const pOriginal = parseFloat(price_original) || null;
@@ -703,13 +719,13 @@ const server = http.createServer(async (req, res) => {
 
     const matchDelete = pathname.match(/^\/api\/admin\/products\/(\d+)$/);
     if (matchDelete && req.method === 'DELETE') {
-      if (!checkAuth(req)) return sendJson(res, 401, { error: 'Não autorizado' });
+      if (!checkAuth(req)) return sendJson(res, 401, { error: 'NÃ£o autorizado' });
       const id = matchDelete[1];
       db.prepare('DELETE FROM products WHERE id = ?').run(id);
       return sendJson(res, 200, { success: true });
     }
 
-    // Página amigável de produto com metatags OpenGraph para WhatsApp / Redes Sociais
+    // PÃ¡gina amigÃ¡vel de produto com metatags OpenGraph para WhatsApp / Redes Sociais
     const matchProdPage = pathname.match(/^\/produto\/(\d+)$/);
     if (matchProdPage && req.method === 'GET') {
       const prodId = matchProdPage[1];
@@ -719,10 +735,10 @@ const server = http.createServer(async (req, res) => {
         let html = fs.readFileSync(indexPath, 'utf-8');
         if (product) {
           const ogTags = `
-    <!-- OpenGraph Tags para visualização no WhatsApp e Redes Sociais -->
+    <!-- OpenGraph Tags para visualizaÃ§Ã£o no WhatsApp e Redes Sociais -->
     <meta property="og:type" content="product" />
     <meta property="og:title" content="${escapeHtml(product.title)}" />
-    <meta property="og:description" content="🔥 Por apenas R$ ${product.price_discount.toFixed(2).replace('.', ',')} na Shopee Oficial! ⭐ ${product.rating || '4.8'} • Loja: ${escapeHtml(product.shop_name || 'Verificada na Shopee')}" />
+    <meta property="og:description" content="ðŸ”¥ Por apenas R$ ${product.price_discount.toFixed(2).replace('.', ',')} na Shopee Oficial! â­ ${product.rating || '4.8'} â€¢ Loja: ${escapeHtml(product.shop_name || 'Verificada na Shopee')}" />
     <meta property="og:image" content="${product.image_url}" />
     <meta property="og:image:secure_url" content="${product.image_url}" />
     <meta property="og:image:width" content="600" />
@@ -730,7 +746,7 @@ const server = http.createServer(async (req, res) => {
     <meta property="og:url" content="${product.affiliate_link}" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="${escapeHtml(product.title)}" />
-    <meta name="twitter:description" content="🔥 Por apenas R$ ${product.price_discount.toFixed(2).replace('.', ',')} na Shopee Oficial!" />
+    <meta name="twitter:description" content="ðŸ”¥ Por apenas R$ ${product.price_discount.toFixed(2).replace('.', ',')} na Shopee Oficial!" />
     <meta name="twitter:image" content="${product.image_url}" />
           `;
           html = html.replace('</head>', `${ogTags}\n</head>`);
@@ -740,7 +756,7 @@ const server = http.createServer(async (req, res) => {
       }
     }
 
-    // Página VIP Landing Page (Estilo Buboflow)
+    // PÃ¡gina VIP Landing Page (Estilo Buboflow)
     if ((pathname === '/vip' || pathname === '/grupo') && req.method === 'GET') {
       const vipPath = path.join(PUBLIC_DIR, 'vip.html');
       if (fs.existsSync(vipPath)) {
@@ -750,7 +766,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     // ==========================================
-    // ARQUIVOS ESTÁTICOS
+    // ARQUIVOS ESTÃTICOS
     // ==========================================
     let filePath = path.join(PUBLIC_DIR, pathname === '/' ? 'index.html' : pathname);
     if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
@@ -763,7 +779,7 @@ const server = http.createServer(async (req, res) => {
     fs.readFile(filePath, (err, content) => {
       if (err) {
         res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-        return res.end('404 - Não encontrado');
+        return res.end('404 - NÃ£o encontrado');
       }
       res.writeHead(200, { 'Content-Type': contentType });
       res.end(content);
@@ -783,3 +799,4 @@ server.listen(PORT, () => {
   console.log(`Auto-Cron em Segundo Plano: ATIVO`);
   console.log(`=============================================================\n`);
 });
+
