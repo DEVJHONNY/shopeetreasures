@@ -1299,9 +1299,10 @@
     }
 
     function copyShortLink(id) {
-      const link = window.location.origin + `/r/${id}`;
+      const p = (allAdminProducts || []).find(item => String(item.id) === String(id));
+      const link = (p && p.affiliate_link) ? p.affiliate_link : (window.location.origin + `/r/${id}`);
       navigator.clipboard.writeText(link);
-      alert('Link direto de afiliado copiado: ' + link);
+      alert('Link oficial de afiliado copiado: ' + link);
     }
 
     function copyInternalLink(id) {

@@ -2516,7 +2516,7 @@
 
     // Modal Details
     async function openProductById(id, pushState = true) {
-      let prod = productsList.find(p => p.id === parseInt(id));
+      let prod = productsList.find(p => String(p.id) === String(id));
       if (!prod) {
         try {
           const res = await fetch(API_BASE + `/api/products/${id}`);
@@ -2585,7 +2585,13 @@
 
     function redirectToAffiliate() {
       if (!currentActiveProduct) return;
-      window.open(`/r/${currentActiveProduct.id}`, '_blank');
+      try {
+        fetch(API_BASE + `/api/click/${currentActiveProduct.id}`, { method: 'POST' }).catch(() => {});
+      } catch (e) {}
+
+      // Abre diretamente o link oficial de afiliado da Shopee do produto
+      const targetUrl = currentActiveProduct.affiliate_link || `/r/${currentActiveProduct.id}`;
+      window.open(targetUrl, '_blank', 'noopener,noreferrer');
     }
 
     function shareOnWhatsApp() {
@@ -2616,7 +2622,7 @@
     }
 
     function shareProductCardOnWhatsApp(id) {
-      const prod = productsList.find(p => p.id === id);
+      const prod = productsList.find(p => String(p.id) === String(id));
       if (!prod) return;
       const shopeeLink = prod.affiliate_link || (window.location.origin + `/r/${prod.id}`);
       const priceFmt = prod.price_discount.toFixed(2).replace('.', ',');
@@ -2634,7 +2640,7 @@
     }
 
     function copyProductCardLink(id) {
-      const prod = productsList.find(p => p.id === id);
+      const prod = productsList.find(p => String(p.id) === String(id));
       if (!prod) return;
       const shopeeLink = prod.affiliate_link || (window.location.origin + `/r/${prod.id}`);
       navigator.clipboard.writeText(shopeeLink).then(() => {

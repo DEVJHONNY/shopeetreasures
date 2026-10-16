@@ -296,6 +296,38 @@ exports.handler = async (event, context) => {
       });
     }
 
+    // 12. TRACKING DE CLIQUES
+    const matchClick = pathname.match(/^\/api\/click\/(\d+)$/);
+    if (matchClick && event.httpMethod === 'POST') {
+      return jsonResponse(200, { success: true });
+    }
+
+    // 13. REDIRECIONADOR /r/:id (Fallback caso o link /r/:id seja aberto diretamente no navegador)
+    const matchRedirect = pathname.match(/^\/api\/r\/(\d+)$/);
+    if (matchRedirect && event.httpMethod === 'GET') {
+      const id = matchRedirect[1];
+      try {
+        const shortLink = await shopeeApi.generateAffiliateLink(`https://shopee.com.br/product-i.123.${id}`);
+        return {
+          statusCode: 302,
+          headers: {
+            'Location': shortLink,
+            'Cache-Control': 'no-cache, no-store, must-revalidate'
+          },
+          body: ''
+        };
+      } catch (e) {
+        return {
+          statusCode: 302,
+          headers: {
+            'Location': `https://shopee.com.br/search?keyword=${id}`,
+            'Cache-Control': 'no-cache, no-store, must-revalidate'
+          },
+          body: ''
+        };
+      }
+    }
+
     return jsonResponse(404, { error: 'Rota não encontrada: ' + pathname });
 
   } catch (err) {
