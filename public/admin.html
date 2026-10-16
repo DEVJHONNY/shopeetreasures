@@ -602,6 +602,13 @@
         </div>
         <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
           <input type="text" id="adminProductSearchInput" placeholder="Buscar por nome..." oninput="handleAdminProductSearch(this.value)" style="height: 32px; padding: 0.2rem 0.6rem; font-size: 0.8rem; width: 170px;">
+          <select id="adminSortSelect" onchange="handleAdminSort(this.value)" style="height: 32px; padding: 0.2rem 0.5rem; font-size: 0.8rem; border: 1px solid var(--border); border-radius: var(--radius); background: #fff; color: var(--text); cursor: pointer;">
+            <option value="default">📋 Padrão</option>
+            <option value="price_asc">💲 Menor Preço</option>
+            <option value="price_desc">💲 Maior Preço</option>
+            <option value="discount_desc">🔥 Maior Desconto</option>
+            <option value="discount_asc">📉 Menor Desconto</option>
+          </select>
         </div>
       </div>
 
@@ -994,6 +1001,7 @@
     let allAdminProducts = [];
     let currentAdminCategoryFilter = 'Todos';
     let currentAdminSearchTerm = '';
+    let currentAdminSort = 'default';
 
     function handleAdminCategoryFilter(cat) {
       currentAdminCategoryFilter = cat;
@@ -1005,17 +1013,33 @@
       applyAdminProductFilters();
     }
 
+    function handleAdminSort(value) {
+      currentAdminSort = value;
+      applyAdminProductFilters();
+    }
+
     function applyAdminProductFilters() {
-      let filtered = allAdminProducts;
+      let filtered = [...allAdminProducts];
       if (currentAdminCategoryFilter && currentAdminCategoryFilter !== 'Todos') {
         filtered = filtered.filter(p => p.category === currentAdminCategoryFilter);
       }
       if (currentAdminSearchTerm) {
         filtered = filtered.filter(p => (p.title || '').toLowerCase().includes(currentAdminSearchTerm));
       }
+      // Ordenação
+      if (currentAdminSort === 'price_asc') {
+        filtered.sort((a, b) => (parseFloat(a.price_discount || a.priceCurrent || 0)) - (parseFloat(b.price_discount || b.priceCurrent || 0)));
+      } else if (currentAdminSort === 'price_desc') {
+        filtered.sort((a, b) => (parseFloat(b.price_discount || b.priceCurrent || 0)) - (parseFloat(a.price_discount || a.priceCurrent || 0)));
+      } else if (currentAdminSort === 'discount_desc') {
+        filtered.sort((a, b) => (parseFloat(b.discountPct || b.priceDiscountRate || 0)) - (parseFloat(a.discountPct || a.priceDiscountRate || 0)));
+      } else if (currentAdminSort === 'discount_asc') {
+        filtered.sort((a, b) => (parseFloat(a.discountPct || a.priceDiscountRate || 0)) - (parseFloat(b.discountPct || b.priceDiscountRate || 0)));
+      }
       renderFilteredProductsList(filtered);
       renderCategoryFilterBar();
     }
+
 
     function renderCategoryFilterBar() {
       const bar = document.getElementById('categoryFilterBar');
