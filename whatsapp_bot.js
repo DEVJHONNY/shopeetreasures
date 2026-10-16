@@ -308,6 +308,63 @@ async function dispatchOffer(specificProduct = null, isManual = false) {
   }
 }
 
+// Enviar enquete interativa nativa do WhatsApp no grupo VIP
+async function dispatchPoll({ name, values, selectableCount = 0 } = {}) {
+  if (connectionStatus !== 'connected' || !sock) {
+    throw new Error('WhatsApp não está conectado. Conecte pelo painel admin primeiro.');
+  }
+
+  if (!targetGroupJid) {
+    const savedLink = getBotSetting('whatsapp_link', 'https://chat.whatsapp.com/KjHrqfJp3HuIHQiR8Zfl3L');
+    await resolveGroupJid(savedLink);
+  }
+
+  if (!targetGroupJid) {
+    throw new Error('Não foi possível identificar o grupo de destino. Verifique o link do grupo nas configurações.');
+  }
+
+  const pollName = (name || 'Qual categoria de promoção você MAIS quer ver aqui? 🛍️🔥').trim();
+  const pollValues = Array.isArray(values) && values.length >= 2 ? values : [
+    '👟 Moda & Calçados',
+    '📱 Tecnologia & Eletrônicos',
+    '🏠 Casa & Decoração',
+    '💄 Beleza & Skincare',
+    '🍳 Cozinha & Utilidades',
+    '💪 Saúde & Esportes',
+    '🎮 Games & Acessórios',
+    '🧸 Brinquedos & Bebês'
+  ];
+
+  try {
+    const sendResult = await sock.sendMessage(targetGroupJid, {
+      poll: {
+        name: pollName,
+        values: pollValues,
+        selectableCount: typeof selectableCount === 'number' ? selectableCount : 0
+      }
+    });
+
+    const logEntry = {
+      id: Date.now(),
+      title: `📊 Enquete: "${pollName}"`,
+      price: null,
+      timestamp: new Date().toISOString(),
+      type: 'poll',
+      status: 'success'
+    };
+
+    dispatchedLog.unshift(logEntry);
+    if (dispatchedLog.length > 50) dispatchedLog.pop();
+
+    console.log(`[WhatsApp Bot] 📊 Enquete enviada com sucesso no grupo: "${pollName}"`);
+    return { success: true, messageId: sendResult?.key?.id, poll: { name: pollName, values: pollValues } };
+  } catch (err) {
+    console.error('[WhatsApp Bot] Erro ao enviar enquete no grupo:', err);
+    throw new Error('Falha ao enviar enquete: ' + err.message);
+  }
+}
+
+
 // Background scheduler loop (runs every 30 seconds to check if post is due)
 function startSchedulerLoop() {
   if (autoPostIntervalTimer) clearInterval(autoPostIntervalTimer);
@@ -377,6 +434,7 @@ module.exports = {
   initWhatsApp,
   disconnectWhatsApp,
   dispatchOffer,
+  dispatchPoll,
   getStatus,
   setConfig,
   resolveGroupJid,

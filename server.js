@@ -848,6 +848,23 @@ const server = http.createServer(async (req, res) => {
       }
     }
 
+    // Enviar enquete interativa nativa para o grupo VIP do WhatsApp
+    if (pathname === '/api/admin/whatsapp/send-poll' && req.method === 'POST') {
+      if (!checkAuth(req)) return sendJson(res, 401, { error: 'Não autorizado' });
+      try {
+        const body = await parseBody(req);
+        const result = await whatsappBot.dispatchPoll({
+          name: body.name,
+          values: body.values,
+          selectableCount: body.selectableCount !== undefined ? body.selectableCount : 0
+        });
+        return sendJson(res, 200, result);
+      } catch (err) {
+        return sendJson(res, 400, { success: false, error: err.message });
+      }
+    }
+
+
     // ==========================================
     // ROTAS DO PAINEL ADMIN
     // ==========================================

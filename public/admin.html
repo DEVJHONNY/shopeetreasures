@@ -534,10 +534,16 @@
           <p style="font-size: 0.82rem; color: #64748b; margin-bottom: 1rem;">
             O robô está pronto para postar ofertas no grupo sem você precisar clicar em nada.
           </p>
-          <button class="btn btn-outline" style="color: #ef4444; border-color: #fca5a5; font-size: 0.8rem; padding: 0.35rem 0.75rem;" onclick="disconnectWhatsAppBot()">
-            <i class="fa-solid fa-power-off"></i> Desconectar Sessão
-          </button>
+          <div style="display: flex; justify-content: center; gap: 0.5rem; flex-wrap: wrap;">
+            <button class="btn btn-primary" style="background: #0284c7; border: none; font-size: 0.8rem; padding: 0.4rem 0.85rem;" onclick="sendCategoryPoll()">
+              <i class="fa-solid fa-square-poll-vertical"></i> 📊 Enviar Enquete de Categorias
+            </button>
+            <button class="btn btn-outline" style="color: #ef4444; border-color: #fca5a5; font-size: 0.8rem; padding: 0.35rem 0.75rem;" onclick="disconnectWhatsAppBot()">
+              <i class="fa-solid fa-power-off"></i> Desconectar Sessão
+            </button>
+          </div>
         </div>
+
       </div>
 
       <!-- Schedule & Automation Controls -->
@@ -904,7 +910,45 @@
       }
     }
 
+    async function sendCategoryPoll() {
+
+      if (!confirm('Deseja enviar a enquete de categorias diretamente no Grupo VIP do WhatsApp agora?')) return;
+      try {
+        const res = await fetch(API_BASE + '/api/admin/whatsapp/send-poll', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + authToken
+          },
+          body: JSON.stringify({
+            name: 'Qual categoria de promoção você MAIS quer ver aqui? 🛍️🔥',
+            values: [
+              '👟 Moda & Calçados',
+              '📱 Tecnologia & Eletrônicos',
+              '🏠 Casa & Decoração',
+              '💄 Beleza & Skincare',
+              '🍳 Cozinha & Utilidades',
+              '💪 Saúde & Esportes',
+              '🎮 Games & Acessórios',
+              '🧸 Brinquedos & Bebês'
+            ],
+            selectableCount: 0
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('📊 Enquete enviada com sucesso no Grupo VIP do WhatsApp!');
+          loadWhatsAppBotStatus();
+        } else {
+          alert('Erro ao enviar enquete: ' + (data.error || 'Verifique se o bot está conectado.'));
+        }
+      } catch (err) {
+        alert('Erro ao enviar enquete: ' + err.message);
+      }
+    }
+
     async function disconnectWhatsAppBot() {
+
       if (!confirm('Deseja realmente desconectar a sessão do WhatsApp?')) return;
       try {
         const res = await fetch(API_BASE + '/api/admin/whatsapp/disconnect', {
