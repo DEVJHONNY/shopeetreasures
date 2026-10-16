@@ -665,13 +665,22 @@ const server = http.createServer(async (req, res) => {
         let extractedId = null;
         const matchSite = targetLink.match(/\/produto\/(\d+)/i);
         const matchShortR = targetLink.match(/\/r\/(\d+)/i);
-        const matchShopeeItemId = targetLink.match(/-i\.\d+\.(\d+)/i) || targetLink.match(/product-i\.\d+\.(\d+)/i) || targetLink.match(/\/(\d{6,})\/(\d{6,})/);
+        const matchShopeeFormat = targetLink.match(/-i\.(\d+)\.(\d+)/i); // slug-i.SHOPID.ITEMID
         const matchDigits = targetLink.match(/^(\d{5,})$/);
+
+        // Para URLs shopee.com.br/slug/SHOPID/ITEMID?... → pega o ÚLTIMO segmento numérico longo da path
+        const pathBeforeQuery = targetLink.split('?')[0];
+        const numericSegments = pathBeforeQuery.split('/').filter(s => /^\d{6,}$/.test(s));
+        const matchPathId = numericSegments.length > 0 ? numericSegments[numericSegments.length - 1] : null;
 
         if (matchSite) extractedId = matchSite[1];
         else if (matchShortR) extractedId = matchShortR[1];
-        else if (matchShopeeItemId) extractedId = matchShopeeItemId[2] || matchShopeeItemId[1];
+        else if (matchShopeeFormat) extractedId = matchShopeeFormat[2]; // item_id é o SEGUNDO número
+        else if (matchPathId) extractedId = matchPathId;                // último segmento numérico longo
         else if (matchDigits) extractedId = matchDigits[1];
+
+        console.log(`[PreviewLink] URL após redirect: ${targetLink}`);
+        console.log(`[PreviewLink] ID extraído: ${extractedId}`);
 
         // 2. Procura no banco de dados local por ID
         if (extractedId) {
@@ -725,48 +734,70 @@ const server = http.createServer(async (req, res) => {
           }
         }
 
-        // 5. Se for um link direto da Shopee e não temos no banco
-        if (!product && (targetLink.includes('shopee.com') || targetLink.includes('shp.ee'))) {
+        // 4.5. Tenta buscar produto diretamente na Shopee Affiliate API por itemId
+        if (!product && extractedId) {
+          try {
+            console.log(`[PreviewLink] Buscando produto por itemId ${extractedId} na Shopee API...`);
+            const apiProduct = await shopeeApi.fetchProductById(extractedId);
+            if (apiProduct && apiProduct.productName) {
+              console.log(`[PreviewLink] Produto encontrado na Shopee API: ${apiProduct.productName}`);
+              const price = parseFloat(apiProduct.priceMin || 0);
+              const discount = parseInt(apiProduct.priceDiscountRate || 0, 10);
+              const origPrice = discount > 0 && price > 0 ? price / (1 - discount / 100) : price;
+              product = {
+                id: extractedId,
+                title: apiProduct.productName,
+                price_discount: price,
+                price_original: origPrice,
+                discount_pct: discount,
+                category: 'Achadinhos',
+                image_url: apiProduct.imageUrl || 'https://cf.shopee.com.br/file/br-11134207-820lt-msq8pkzchmh355',
+                affiliate_link: apiProduct.offerLink || link,
+                sales_count: apiProduct.sales || 'Destaque Oficial',
+                rating: parseFloat(apiProduct.ratingStar || 4.9),
+                shop_name: apiProduct.shopName || 'Loja Shopee'
+              };
+            }
+          } catch (e) {
+            console.warn('[PreviewLink] Erro ao buscar produto por itemId na Shopee API:', e.message);
+          }
+        }
+
+        // 5. Se for um link direto da Shopee e não temos no banco, gera link afiliado com dados do slug
+        if (!product && (targetLink.includes('shopee.com') || targetLink.includes('shp.ee') || link.includes('s.shopee.com.br'))) {
+
           try {
             const affLink = await shopeeApi.generateAffiliateLink(link);
 
-            // Tenta extrair o nome do produto pelo slug da URL da Shopee
-            const slugMatch = targetLink.match(/shopee\.com\.br\/([^\/\?]+)-i\./i);
-            let productTitle = 'Produto Selecionado na Shopee';
-            let productPrice = 29.90;
+            // Apenas o formato /produto-nome-i.SHOPID.ITEMID tem o nome real no slug
+            // O formato /username/SHOPID/ITEMID não tem o nome do produto na URL
+            const slugMatchFormat1 = targetLink.match(/shopee\.com\.br\/([^\/\?]+)-i\.\d+\.\d+/i);
+
+            let productTitle = extractedId ? `Produto Shopee #${extractedId}` : 'Produto Selecionado na Shopee';
             let productImg = 'https://cf.shopee.com.br/file/br-11134207-820lt-msq8pkzchmh355';
             let productShop = 'Loja Oficial Shopee';
-            let productDiscount = 35;
-            let productOrigPrice = 46.00;
+            let productPrice = 0;
+            let productDiscount = 0;
+            let productOrigPrice = 0;
 
-            if (slugMatch) {
-              const kw = decodeURIComponent(slugMatch[1]).replace(/-/g, ' ').trim();
-              productTitle = kw;
-              try {
-                const nodes = await shopeeApi.fetchTopOffers({ keyword: kw.slice(0, 30), limit: 5 });
-                if (nodes && nodes.length > 0) {
-                  const n = nodes[0];
-                  productTitle = n.productName || productTitle;
-                  productPrice = parseFloat(n.priceMin || productPrice);
-                  productDiscount = parseInt(n.priceDiscountRate || productDiscount, 10);
-                  if (productDiscount > 0 && productPrice > 0) {
-                    productOrigPrice = productPrice / (1 - (productDiscount / 100));
-                  }
-                  productImg = n.imageUrl || productImg;
-                  productShop = n.shopName || productShop;
-                }
-              } catch (e) {}
+            if (slugMatchFormat1) {
+              // Capitaliza o slug como título legível
+              productTitle = decodeURIComponent(slugMatchFormat1[1])
+                .replace(/-/g, ' ')
+                .replace(/\b\w/g, c => c.toUpperCase())
+                .trim();
+              console.log(`[PreviewLink] Título extraído do slug: ${productTitle}`);
             }
 
             product = {
-              id: 'custom_' + Date.now(),
+              id: extractedId || ('custom_' + Date.now()),
               title: productTitle,
               price_discount: productPrice,
               price_original: productOrigPrice,
               discount_pct: productDiscount,
               category: 'Achadinhos',
               image_url: productImg,
-              affiliate_link: affLink,
+              affiliate_link: affLink || link,
               sales_count: 'Destaque Oficial',
               rating: 4.9,
               shop_name: productShop
@@ -775,6 +806,7 @@ const server = http.createServer(async (req, res) => {
             console.warn('[PreviewLink] Erro ao converter link Shopee:', e.message);
           }
         }
+
 
         if (!product) {
           throw new Error('Não foi possível localizar as informações do produto com o link informado. Verifique se o link está correto.');

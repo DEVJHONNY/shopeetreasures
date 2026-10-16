@@ -97,8 +97,42 @@ async function fetchTopOffers({ keyword = '', page = 1, limit = 20 } = {}) {
   return [];
 }
 
+/**
+ * Fetch a specific product by its itemId using the Shopee Affiliate API
+ * Uses keyword search with itemId as filter (Shopee API doesn't have direct itemId lookup)
+ */
+async function fetchProductById(itemId) {
+  const query = `
+    query {
+      productOfferV2(itemId: "${itemId}", limit: 1) {
+        nodes {
+          itemId
+          productName
+          priceMin
+          priceMax
+          priceDiscountRate
+          imageUrl
+          offerLink
+          sales
+          ratingStar
+          shopName
+        }
+      }
+    }
+  `;
+
+  try {
+    const result = await executeQuery(query);
+    if (result.data && result.data.productOfferV2 && result.data.productOfferV2.nodes && result.data.productOfferV2.nodes.length > 0) {
+      return result.data.productOfferV2.nodes[0];
+    }
+  } catch (e) {}
+  return null;
+}
+
 module.exports = {
   APP_ID,
   generateAffiliateLink,
-  fetchTopOffers
+  fetchTopOffers,
+  fetchProductById
 };
