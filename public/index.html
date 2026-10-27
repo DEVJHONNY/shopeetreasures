@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShopeeTreasures | Vitrine Oficial de Achadinhos e Ofertas Shopee</title>
+  <title>ShopeeTreasures | Curadoria de Ofertas na Shopee</title>
   
   <!-- PWA & Mobile Web App Manifest -->
   <link rel="manifest" href="/manifest.json">
@@ -659,7 +659,7 @@
     }
 
     /* =========================================================
-       SEÇÃO: OFERTAS RELÂMPAGO (SHOPEE FLASH DEALS)
+       SEÇÃO: OFERTAS EM DESTAQUE (SHOPEE FLASH DEALS)
     ========================================================= */
     .flash-sale-box {
       background: #ffffff;
@@ -1641,13 +1641,14 @@
       flex-shrink: 0;
     }
   </style>
+  <link rel="stylesheet" href="/storefront.css">
 </head>
 <body>
 
   <!-- LGPD Consent Banner -->
   <div id="lgpdBanner" class="lgpd-banner">
     <div>
-      <strong>Privacidade & Transparência:</strong> Curadoria independente de produtos oficiais da Shopee. Utilizamos links de afiliados.
+      <strong>Privacidade & Transparência:</strong> Curadoria independente de produtos disponíveis na Shopee. Utilizamos links de afiliados.
     </div>
     <div>
       <button class="lgpd-btn" onclick="acceptLgpd()">Aceitar</button>
@@ -1658,9 +1659,9 @@
   <div class="shopee-top-bar">
     <div class="shopee-top-inner">
       <div class="shopee-top-links">
-        <span><i class="fa-solid fa-store"></i> Curadoria Oficial de Afiliados Shopee</span>
+        <span><i class="fa-solid fa-store"></i> Curadoria independente • links de afiliado</span>
         <span style="opacity: 0.5;">|</span>
-        <a href="https://shopee.com.br" target="_blank" rel="noopener"><i class="fa-solid fa-shield-check"></i> Garantia de Compra Shopee</a>
+        <a href="https://shopee.com.br" target="_blank" rel="noopener"><i class="fa-solid fa-shield-check"></i> Conhecer a Shopee</a>
       </div>
       <div class="shopee-top-links">
         <a id="vipTopLink" href="/vip"><i class="fa-brands fa-whatsapp"></i> Grupo VIP WhatsApp</a>
@@ -1675,13 +1676,13 @@
     <div class="header-inner">
       <div class="header-top-row">
         <!-- Logo -->
-        <div class="brand-logo" onclick="navigateHome()">
+        <div class="brand-logo" role="button" tabindex="0" aria-label="Página inicial" onclick="navigateHome()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();navigateHome();}">
           <div class="brand-icon-box">
-            <i class="fa-solid fa-bag-shopping"></i>
+            <img src="/icons/icon-192.png" alt="" width="40" height="40">
           </div>
           <div class="brand-text">
             <h1>Shopee<span>Treasures</span></h1>
-            <div class="brand-tagline">Achadinhos Verificados</div>
+            <div class="brand-tagline">Ofertas selecionadas</div>
           </div>
         </div>
 
@@ -1702,8 +1703,8 @@
       <div class="header-search">
         <form id="searchForm" onsubmit="handleSearch(event)">
           <div class="shopee-search-wrap">
-            <input type="text" id="searchInput" placeholder="Buscar produtos, achadinhos e ofertas com até 85% OFF..." autocomplete="off" oninput="toggleClearBtn(this.value)">
-            <button type="button" id="searchClearBtn" class="search-clear-btn" onclick="clearSearch()" title="Limpar busca">
+            <input type="search" aria-label="Buscar produtos" id="searchInput" placeholder="O que você está procurando?" autocomplete="off" oninput="toggleClearBtn(this.value)">
+            <button type="button" id="searchClearBtn" aria-label="Limpar busca" class="search-clear-btn" onclick="clearSearch()" title="Limpar busca">
               <i class="fa-solid fa-xmark"></i>
             </button>
             <button type="submit" class="shopee-search-btn">
@@ -1735,7 +1736,7 @@
         <i class="fa-solid fa-fire"></i> Todos os Achadinhos
       </button>
       <button class="cat-chip" onclick="filterByCategory('Destaques')">
-        <i class="fa-solid fa-star"></i> Mais Vendidos
+        <i class="fa-solid fa-star"></i> Destaques
       </button>
       <button class="cat-chip" onclick="filterByCategory('Eletrônicos')">
         <i class="fa-solid fa-headphones"></i> Eletrônicos
@@ -1762,184 +1763,34 @@
   </nav>
 
   <!-- Main Container -->
+  <a href="#offers" class="skip-link">Pular para as ofertas</a>
   <main class="container">
     
     <!-- =======================================================
          HOMEPAGE ONLY SECTIONS (Hidden during keyword search)
     ======================================================== -->
-    <div id="homepageExclusiveContent">
-      
-      <!-- 1. Shopee Hero Banner Grid (Carousel + Side Promo Banners) -->
-      <div class="shopee-hero-grid">
-        <div class="shopee-carousel-wrap">
-          <!-- Slide 1 -->
-          <div class="carousel-slide slide-bg-1 active">
-            <div class="carousel-text">
-              <span class="carousel-tag"><i class="fa-solid fa-bolt"></i> Curadoria 2026</span>
-              <h2 class="carousel-title">Super Achadinhos com até 85% OFF</h2>
-              <p class="carousel-desc">Lojas oficiais verificadas com avaliação 4.8+ e menores preços na Shopee.</p>
-              <button class="carousel-btn" onclick="scrollToFlashSale()">
-                <span>Ver Ofertas Relâmpago</span>
-                <i class="fa-solid fa-arrow-right"></i>
-              </button>
-            </div>
-          </div>
-          <!-- Slide 2 -->
-          <div class="carousel-slide slide-bg-2">
-            <div class="carousel-text">
-              <span class="carousel-tag"><i class="fa-solid fa-crown"></i> Top Seleção</span>
-              <h2 class="carousel-title">Produtos Mais Vendidos e Bem Avaliados</h2>
-              <p class="carousel-desc">Tecnologia, utilidades para o lar e beleza com compra segura Shopee.</p>
-              <button class="carousel-btn" onclick="filterByCategory('Destaques')">
-                <span>Conferir Destaques</span>
-                <i class="fa-solid fa-arrow-right"></i>
-              </button>
-            </div>
-          </div>
-          <!-- Slide 3 -->
-          <div class="carousel-slide slide-bg-3">
-            <div class="carousel-text">
-              <span class="carousel-tag"><i class="fa-brands fa-whatsapp"></i> Alertas Diários</span>
-              <h2 class="carousel-title">Participe do nosso Grupo VIP no WhatsApp</h2>
-              <p class="carousel-desc">Receba notificações de promoções exclusivas direto no seu celular.</p>
-              <a href="https://chat.whatsapp.com/" target="_blank" class="carousel-btn">
-                <span>Entrar no Grupo VIP</span>
-                <i class="fa-brands fa-whatsapp"></i>
-              </a>
-            </div>
-          </div>
-
-          <div class="carousel-dots" id="carouselDots">
-            <div class="carousel-dot active" onclick="setSlide(0)"></div>
-            <div class="carousel-dot" onclick="setSlide(1)"></div>
-            <div class="carousel-dot" onclick="setSlide(2)"></div>
-          </div>
+<div id="homepageExclusiveContent">
+      <section class="treasure-hero" aria-labelledby="heroTitle">
+        <div class="hero-copy">
+          <span class="hero-eyebrow">ACHADOS PARA A VIDA REAL</span>
+          <h2 id="heroTitle">Compre com calma.<br><em>Escolha bem.</em></h2>
+          <p>Encontre algo útil para sua rotina, compare as condições e salve o que merece uma segunda olhada.</p>
+          <div class="hero-actions"><a class="hero-primary" href="#offers">Explorar os achados <span aria-hidden="true">↗</span></a><a class="hero-secondary" href="/vip">Conhecer o grupo →</a></div>
+          <span class="hero-note">Curadoria independente · Compra feita na Shopee</span>
         </div>
-
-        <!-- 2 Side Promo Cards (Shopee style) -->
-        <div class="shopee-side-banners">
-          <div class="side-banner-card" onclick="filterByCategory('Eletrônicos')">
-            <div class="side-card-info">
-              <h4>Eletrônicos em Alta</h4>
-              <p>Fones, smartwatches e acessórios</p>
-            </div>
-            <i class="fa-solid fa-headphones" style="font-size: 2rem; color: #ee4d2d;"></i>
-          </div>
-          <div class="side-banner-card" onclick="filterByCategory('Casa & Cozinha')">
-            <div class="side-card-info">
-              <h4>Casa & Cozinha</h4>
-              <p>Achados práticos para o seu lar</p>
-            </div>
-            <i class="fa-solid fa-blender" style="font-size: 2rem; color: #f59e0b;"></i>
-          </div>
-        </div>
-      </div>
-
-      <!-- 2. Shopee 8 Circular Action Buttons -->
-      <div class="shopee-circle-strip">
-        <div class="shopee-circle-item" onclick="scrollToFlashSale()">
-          <div class="shopee-circle-icon" style="color: #ee4d2d;"><i class="fa-solid fa-bolt"></i></div>
-          <span class="shopee-circle-label">Relâmpago</span>
-        </div>
-        <div class="shopee-circle-item" onclick="filterByCategory('Destaques')">
-          <div class="shopee-circle-icon" style="color: #f59e0b;"><i class="fa-solid fa-trophy"></i></div>
-          <span class="shopee-circle-label">Mais Vendidos</span>
-        </div>
-        <div class="shopee-circle-item" onclick="handlePriceFilter('0-30')">
-          <div class="shopee-circle-icon" style="color: #10b981;"><i class="fa-solid fa-tags"></i></div>
-          <span class="shopee-circle-label">Até R$ 30</span>
-        </div>
-        <div class="shopee-circle-item" onclick="filterByCategory('Eletrônicos')">
-          <div class="shopee-circle-icon" style="color: #2563eb;"><i class="fa-solid fa-mobile-screen"></i></div>
-          <span class="shopee-circle-label">Eletrônicos</span>
-        </div>
-        <div class="shopee-circle-item" onclick="filterByCategory('Casa & Cozinha')">
-          <div class="shopee-circle-icon" style="color: #f97316;"><i class="fa-solid fa-utensils"></i></div>
-          <span class="shopee-circle-label">Cozinha</span>
-        </div>
-        <div class="shopee-circle-item" onclick="filterByCategory('Beleza')">
-          <div class="shopee-circle-icon" style="color: #ec4899;"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
-          <span class="shopee-circle-label">Beleza</span>
-        </div>
-        <div class="shopee-circle-item" onclick="filterByCategory('Moda')">
-          <div class="shopee-circle-icon" style="color: #8b5cf6;"><i class="fa-solid fa-shirt"></i></div>
-          <span class="shopee-circle-label">Moda</span>
-        </div>
-        <a id="vipCircleBtn" href="https://chat.whatsapp.com/" target="_blank" class="shopee-circle-item">
-          <div class="shopee-circle-icon" style="color: #25d366;"><i class="fa-brands fa-whatsapp"></i></div>
-          <span class="shopee-circle-label">Grupo VIP</span>
-        </a>
-      </div>
-
-      <!-- 3. Seção Oficial: OFERTAS RELÂMPAGO (Shopee Flash Sale with Countdown) -->
-      <section class="flash-sale-box" id="flashSaleSection">
-        <div class="flash-sale-header">
-          <div class="flash-title-wrap">
-            <span class="flash-title"><i class="fa-solid fa-bolt"></i> Ofertas Relâmpago</span>
-            <div class="flash-clock">
-              <span class="flash-clock-digit" id="clockH">02</span>
-              <span class="flash-clock-sep">:</span>
-              <span class="flash-clock-digit" id="clockM">45</span>
-              <span class="flash-clock-sep">:</span>
-              <span class="flash-clock-digit" id="clockS">18</span>
-            </div>
-          </div>
-          <a href="javascript:void(0)" onclick="handleSort('discount_desc')" style="color: var(--shopee-orange); font-size: 0.8rem; font-weight: 700;">
-            Ver Todas as Ofertas <i class="fa-solid fa-chevron-right" style="font-size: 0.7rem;"></i>
-          </a>
-        </div>
-        <div class="flash-cards-scroll" id="flashCardsContainer">
-          <!-- Flash cards injetados via JavaScript -->
-        </div>
+        <aside class="hero-guide" aria-label="Como escolher uma oferta">
+          <div class="guide-heading"><span>SEU PRÓXIMO BOM ACHADO</span><span aria-hidden="true">✳</span></div>
+          <h3>Vale a pena<br> para você?</h3>
+          <ol><li><span>01</span><div><strong>Comece pela necessidade</strong><p>O que vai facilitar seu dia?</p></div></li><li><span>02</span><div><strong>Compare o valor final</strong><p>Produto, variação e frete.</p></div></li><li><span>03</span><div><strong>Salve para decidir depois</strong><p>Sem pressa para comprar.</p></div></li></ol>
+          <a href="/vip#comparador">Comparar preço por unidade ↗</a>
+        </aside>
       </section>
-
-      <!-- 4. Seção: CATEGORIAS SHOPEE -->
-      <div class="shopee-section-title">
-        <i class="fa-solid fa-shapes" style="color: var(--shopee-orange);"></i> Categorias em Destaque
-      </div>
-      <div class="categories-grid-box">
-        <div class="category-tile" onclick="filterByCategory('Eletrônicos')">
-          <i class="fa-solid fa-headphones"></i>
-          <span>Eletrônicos</span>
-        </div>
-        <div class="category-tile" onclick="filterByCategory('Casa & Cozinha')">
-          <i class="fa-solid fa-blender"></i>
-          <span>Casa & Lar</span>
-        </div>
-        <div class="category-tile" onclick="filterByCategory('Beleza')">
-          <i class="fa-solid fa-heart"></i>
-          <span>Beleza</span>
-        </div>
-        <div class="category-tile" onclick="filterByCategory('Decoração')">
-          <i class="fa-solid fa-lightbulb"></i>
-          <span>Decoração</span>
-        </div>
-        <div class="category-tile" onclick="filterByCategory('Moda')">
-          <i class="fa-solid fa-shirt"></i>
-          <span>Moda</span>
-        </div>
-        <div class="category-tile" onclick="filterByCategory('Automotivo')">
-          <i class="fa-solid fa-car"></i>
-          <span>Automotivo</span>
-        </div>
-        <div class="category-tile" onclick="filterByCategory('Esportes')">
-          <i class="fa-solid fa-dumbbell"></i>
-          <span>Esportes</span>
-        </div>
-        <div class="category-tile" onclick="filterByCategory('Destaques')">
-          <i class="fa-solid fa-crown"></i>
-          <span>Destaques</span>
-        </div>
-      </div>
-
+      <nav class="discovery-shortcuts" aria-label="Ideias para começar"><span>Por onde começar?</span><button onclick="handlePriceFilter('0-30')">Até R$ 30</button><button onclick="filterByCategory('Casa &amp; Cozinha')">Casa &amp; Cozinha</button><button onclick="filterByCategory('Beleza')">Beleza</button><button onclick="filterByCategory('Eletrônicos')">Eletrônicos</button></nav>
     </div>
 
-    <!-- =======================================================
-         SEARCH ACTIVE NOTICE (Shown only during text search)
-    ======================================================== -->
     <div id="searchActiveBanner" class="search-active-banner" style="display: none;">
       <div>
-        <span style="font-size: 0.82rem; color: #64748b; display: block;">Resultados da pesquisa oficial:</span>
+        <span style="font-size: 0.82rem; color: #64748b; display: block;">Resultados da busca:</span>
         <strong id="searchActiveTerm" style="font-size: 1.05rem; color: #111;">"pula pula"</strong>
         <span id="searchActiveCount" style="font-size: 0.78rem; color: #16a34a; font-weight: 700; margin-left: 0.5rem;">(68 achadinhos)</span>
       </div>
@@ -1951,19 +1802,19 @@
     <!-- =======================================================
          FEED PRINCIPAL: DESCOBERTAS DO DIA (DAILY DISCOVER)
     ======================================================== -->
-    <div class="daily-discover-header">
+    <div class="daily-discover-header" id="offers">
       <div class="daily-discover-title" id="feedTitleHeading">
         <i class="fa-solid fa-gem"></i> Descobertas do Dia
       </div>
       
       <!-- Sorting & Filter -->
       <div style="display: flex; gap: 0.4rem;">
-        <select id="sortFilter" onchange="handleSort(this.value)" style="border: 1px solid #d1d5db; border-radius: 4px; padding: 0.35rem 0.5rem; font-size: 0.76rem; font-weight: 600; outline: none;">
+        <select aria-label="Ordenar ofertas" id="sortFilter" onchange="handleSort(this.value)" style="border: 1px solid #d1d5db; border-radius: 4px; padding: 0.35rem 0.5rem; font-size: 0.76rem; font-weight: 600; outline: none;">
           <option value="default">Relevância</option>
           <option value="discount_desc">Maior Desconto</option>
           <option value="price_asc">Menor Preço</option>
           <option value="price_desc">Maior Preço</option>
-          <option value="sales_desc">Mais Vendidos</option>
+          
         </select>
       </div>
     </div>
@@ -1980,7 +1831,7 @@
         <span>Carregar Mais Descobertas (+30 Ofertas)</span>
       </button>
       <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 0.4rem;">
-        Catálogo oficial integrado à Shopee Open API.
+        Preços podem mudar. Confirme variação, frete e condições no anúncio.
       </div>
     </div>
 
@@ -1989,7 +1840,7 @@
   <!-- =======================================================
        DEDICATED IN-SITE PRODUCT PAGE / MODAL
   ======================================================== -->
-  <div id="productModal" class="product-modal-backdrop" onclick="handleBackdropClick(event)">
+  <div id="productModal" role="dialog" aria-modal="true" aria-labelledby="modalProductTitle" class="product-modal-backdrop" onclick="handleBackdropClick(event)">
     <div class="product-modal-card" id="modalCard">
       
       <!-- Modal Navigation Bar -->
@@ -2001,7 +1852,7 @@
           <span style="color: #cbd5e1;">/</span>
           <span id="modalCategoryBreadcrumb" style="color: #64748b;">Achadinhos</span>
         </div>
-        <button onclick="closeProductModal()" style="background: none; border: none; font-size: 1.25rem; color: #94a3b8; cursor: pointer;">
+        <button aria-label="Fechar detalhe do produto" onclick="closeProductModal()" style="background: none; border: none; font-size: 1.25rem; color: #94a3b8; cursor: pointer;">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
@@ -2026,8 +1877,8 @@
         <div>
           <div class="modal-store-box">
             <div>
-              <span style="font-size: 0.65rem; color: var(--text-muted); display: block;">Loja Oficial</span>
-              <strong id="modalShopName" style="font-size: 0.85rem; color: #111;">Loja Verificada na Shopee</strong>
+              <span style="font-size: 0.65rem; color: var(--text-muted); display: block;">Loja na Shopee</span>
+              <strong id="modalShopName" style="font-size: 0.85rem; color: #111;">Confira a loja no anúncio</strong>
             </div>
             <span style="background: #e0f2fe; color: #0284c7; font-size: 0.7rem; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 999px;">
               <i class="fa-solid fa-shield-check"></i> Verificada
@@ -2038,11 +1889,11 @@
 
           <div class="modal-stats-bar">
             <span style="color: #f59e0b; font-weight: 800;">
-              <i class="fa-solid fa-star"></i> <span id="modalRating">4.9</span>
+              <i class="fa-solid fa-star"></i> <span id="modalRating">Não informada</span>
             </span>
             <span>•</span>
             <span style="color: #ea580c; font-weight: 700;">
-              <i class="fa-solid fa-fire"></i> <span id="modalSalesCount">12,4 mil vendidos</span>
+              <i class="fa-solid fa-fire"></i> <span id="modalSalesCount">Consulte o anúncio</span>
             </span>
             <span>•</span>
             <span style="color: #16a34a; font-weight: 700;"><i class="fa-solid fa-check"></i> Em Estoque</span>
@@ -2062,17 +1913,17 @@
 
           <!-- Description -->
           <div style="font-size: 0.82rem; color: #475569; margin-bottom: 1rem; line-height: 1.5;">
-            <p id="modalDescription">Produto oficial selecionado pela curadoria ShopeeTreasures com link direto para a loja oficial.</p>
+            <p id="modalDescription">Confira características e condições no anúncio da Shopee.</p>
           </div>
 
           <!-- Share buttons -->
           <div style="margin-bottom: 1.25rem;">
             <span style="font-size: 0.76rem; color: #64748b; font-weight: 700; display: block; margin-bottom: 0.45rem;">
-              <i class="fa-solid fa-share-nodes"></i> Compartilhar com foto e link oficial:
+              <i class="fa-solid fa-share-nodes"></i> Compartilhar este achado:
             </span>
             <div style="display: flex; gap: 0.45rem; flex-wrap: wrap;">
               <button onclick="shareOnWhatsApp()" style="background: #25d366; color: white; border: none; padding: 0.5rem 0.95rem; border-radius: 4px; font-weight: 700; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 0.35rem; box-shadow: 0 2px 5px rgba(37,211,102,0.25);" title="Compartilhar no WhatsApp com imagem do produto">
-                <i class="fa-brands fa-whatsapp" style="font-size: 0.95rem;"></i> WhatsApp (com Foto)
+                <i class="fa-brands fa-whatsapp" style="font-size: 0.95rem;"></i> WhatsApp
               </button>
               <button onclick="copyProductLink()" style="background: #f8fafc; color: #334155; border: 1px solid #cbd5e1; padding: 0.5rem 0.95rem; border-radius: 4px; font-weight: 700; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 0.35rem;" title="Copiar link oficial da Shopee">
                 <i class="fa-solid fa-link" style="color: var(--shopee-orange);"></i> Copiar Link Shopee
@@ -2082,7 +1933,7 @@
 
           <!-- CTA Buy Button -->
           <button class="modal-buy-cta" onclick="redirectToAffiliate()">
-            <span>Ir para a Loja Oficial na Shopee</span>
+            <span>Ir para a Loja na Shopee na Shopee</span>
             <i class="fa-solid fa-arrow-up-right-from-square"></i>
           </button>
         </div>
@@ -2104,7 +1955,7 @@
     </div>
     <div class="mobile-nav-item" onclick="scrollToFlashSale()">
       <i class="fa-solid fa-bolt" style="color: var(--shopee-orange);"></i>
-      <span>Relâmpago</span>
+      <span>Ofertas</span>
     </div>
     <div id="mobileInstallNavItem" class="mobile-nav-item" onclick="triggerPwaInstall()" style="display: none;">
       <i class="fa-solid fa-circle-down" style="color: var(--shopee-orange);"></i>
@@ -2253,9 +2104,6 @@
     document.addEventListener('DOMContentLoaded', () => {
       checkLgpdConsent();
       loadSettings();
-      initCarousel();
-      startCountdownTimer();
-      loadFlashSale();
       loadProducts();
       handleInitialRoute();
 
@@ -2264,40 +2112,10 @@
       });
     });
 
-    // Carousel auto rotation
-    function initCarousel() {
-      if (slideTimer) clearInterval(slideTimer);
-      slideTimer = setInterval(() => {
-        setSlide((currentSlide + 1) % 3);
-      }, 4500);
-    }
-
-    function setSlide(idx) {
-      currentSlide = idx;
-      const slides = document.querySelectorAll('.carousel-slide');
-      const dots = document.querySelectorAll('.carousel-dot');
-      slides.forEach((s, i) => s.classList.toggle('active', i === idx));
-      dots.forEach((d, i) => d.classList.toggle('active', i === idx));
-    }
-
-    // Flash sale countdown timer (ticks every second like Shopee)
-    function startCountdownTimer() {
-      let secondsRemaining = 2 * 3600 + 45 * 60 + 18;
-      setInterval(() => {
-        secondsRemaining--;
-        if (secondsRemaining <= 0) secondsRemaining = 3 * 3600;
-        const h = Math.floor(secondsRemaining / 3600);
-        const m = Math.floor((secondsRemaining % 3600) / 60);
-        const s = secondsRemaining % 60;
-        document.getElementById('clockH').textContent = String(h).padStart(2, '0');
-        document.getElementById('clockM').textContent = String(m).padStart(2, '0');
-        document.getElementById('clockS').textContent = String(s).padStart(2, '0');
-      }, 1000);
-    }
-
     // Load Flash Sale items from backend
     async function loadFlashSale() {
       const container = document.getElementById('flashCardsContainer');
+      if (!container) return;
       try {
         const res = await fetch(API_BASE + '/api/homepage/flash-sale');
         const flashOffers = await res.json();
@@ -2305,14 +2123,14 @@
           container.innerHTML = flashOffers.map(p => `
             <div class="flash-card" onclick="openProductDetail(${p.id})">
               <div class="flash-media">
-                <img src="${p.image_url}" alt="${escapeHtml(p.title)}" loading="lazy" referrerpolicy="no-referrer" onerror="handleImgError(this)">
-                <div class="flash-discount-badge">-${p.discount_pct || 40}%</div>
+                <img src="${escapeHtml(p.image_url || '')}" alt="${escapeHtml(p.title)}" loading="lazy" referrerpolicy="no-referrer" onerror="handleImgError(this)">
+                <div class="flash-discount-badge">-${p.discount_pct || 0}%</div>
               </div>
               <div class="flash-card-body">
                 <div class="flash-price">R$ ${p.price_discount.toFixed(2).replace('.', ',')}</div>
                 <div class="flash-progress-bar">
-                  <div class="flash-progress-fill" style="width: ${Math.min(95, (p.discount_pct || 50) + 10)}%;"></div>
-                  <span class="flash-progress-text">🔥 ${p.sales_count || '85% Vendido'}</span>
+                  
+                  <span class="flash-progress-text">🔥 ${p.sales_count || 'Veja as condições'}</span>
                 </div>
               </div>
             </div>
@@ -2324,7 +2142,7 @@
     }
 
     function scrollToFlashSale() {
-      const el = document.getElementById('flashSaleSection');
+      const el = document.getElementById('offers');
       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
@@ -2381,13 +2199,15 @@
 
       try {
         const res = await fetch(url);
-        productsList = await res.json();
+        const received = await res.json();
+        if (!res.ok || !Array.isArray(received)) throw new Error('Ofertas indisponíveis');
+        productsList = received;
         renderProducts(productsList);
         if (currentSearch) {
           document.getElementById('searchActiveCount').textContent = `(${productsList.length} achadinhos)`;
         }
       } catch (err) {
-        console.error('Erro ao consultar produtos:', err);
+        document.getElementById('productsGrid').innerHTML='<div class="catalog-error" role="status"><h3>Não conseguimos atualizar as ofertas.</h3><p>Confira sua conexão e tente novamente.</p><button onclick="loadProducts()">Tentar de novo</button></div>';
       }
     }
 
@@ -2455,14 +2275,14 @@
           ? `<span class="price-orig">R$ ${p.price_original.toFixed(2).replace('.', ',')}</span>`
           : '';
 
-        const shopName = p.shop_name || 'Loja Verificada na Shopee';
-        const rating = p.rating ? p.rating.toFixed(1) : '4.8';
-        const sales = p.sales_count || 'Destaque Oficial';
+        const shopName = p.shop_name || 'Confira a loja no anúncio';
+        const rating = p.rating ? p.rating.toFixed(1) : 'Não informada';
+        const sales = p.sales_count || 'Consulte o anúncio';
 
         return `
           <div class="product-card" onclick="openProductDetail(${p.id})">
             <div class="card-media">
-              <img src="${p.image_url}" alt="${escapeHtml(p.title)}" loading="lazy" referrerpolicy="no-referrer" onerror="handleImgError(this)">
+              <img src="${escapeHtml(p.image_url || '')}" alt="${escapeHtml(p.title)}" loading="lazy" referrerpolicy="no-referrer" onerror="handleImgError(this)">
               <div class="card-curation-tag">${p.badge || 'Indicado'}</div>
               ${discountBadge}
             </div>
@@ -2496,7 +2316,7 @@
                 </div>
               </div>
 
-              <div class="card-action-row">
+              <div class="card-action-row"><button class="card-btn-copy" onclick="event.stopPropagation(); toggleSavedOffer(${p.id})" aria-label="Salvar oferta">☆</button>
                 <button class="card-cta-btn" onclick="event.stopPropagation(); openProductDetail(${p.id});">
                   <span>Ver Detalhes</span>
                   <i class="fa-solid fa-arrow-right"></i>
@@ -2515,8 +2335,8 @@
     }
 
     // Modal Details
-    async function openProductById(id, pushState = true) {
-      let prod = productsList.find(p => String(p.id) === String(id));
+    async function openProductById(id, pushState = true, refresh = false) {
+      let prod = refresh ? null : productsList.find(p => String(p.id) === String(id));
       if (!prod) {
         try {
           const res = await fetch(API_BASE + `/api/products/${id}`);
@@ -2524,6 +2344,7 @@
         } catch (e) {}
       }
 
+      if (!prod) { alert('Esta oferta está indisponível no momento. Tente atualizar a página.'); return; }
       if (prod) {
         currentActiveProduct = prod;
         if (pushState) {
@@ -2532,11 +2353,12 @@
 
         document.getElementById('modalCategoryBreadcrumb').textContent = prod.category || 'Achadinhos';
         document.getElementById('modalProductImg').src = prod.image_url;
-        document.getElementById('modalShopName').textContent = prod.shop_name || 'Loja Verificada na Shopee';
+        document.getElementById('modalProductImg').alt = prod.title;
+        document.getElementById('modalShopName').textContent = prod.shop_name || 'Confira a loja no anúncio';
         document.getElementById('modalProductTitle').textContent = prod.title;
-        document.getElementById('modalRating').textContent = prod.rating ? prod.rating.toFixed(1) : '4.9';
-        document.getElementById('modalSalesCount').textContent = prod.sales_count || 'Destaque Oficial';
-        document.getElementById('modalDescription').textContent = prod.description || 'Produto oficial selecionado pela curadoria ShopeeTreasures com link direto para a loja oficial.';
+        document.getElementById('modalRating').textContent = prod.rating ? prod.rating.toFixed(1) : 'Não informada';
+        document.getElementById('modalSalesCount').textContent = prod.sales_count || 'Consulte o anúncio';
+        document.getElementById('modalDescription').textContent = prod.description || 'Confira características e condições no anúncio da Shopee.';
 
         const discTag = document.getElementById('modalDiscountTag');
         if (prod.discount_pct) {
@@ -2561,7 +2383,9 @@
 
         document.getElementById('modalPriceDiscount').textContent = `R$ ${prod.price_discount.toFixed(2).replace('.', ',')}`;
 
+        window.productReturnFocus = document.activeElement;
         document.getElementById('productModal').style.display = 'flex';
+        document.querySelector('#productModal button')?.focus();
         document.body.style.overflow = 'hidden';
       }
     }
@@ -2574,6 +2398,7 @@
       document.getElementById('productModal').style.display = 'none';
       document.body.style.overflow = 'auto';
       currentActiveProduct = null;
+      window.productReturnFocus?.focus();
       if (pushState && window.location.pathname.startsWith('/produto/')) {
         history.pushState(null, '', '/');
       }
@@ -2585,13 +2410,12 @@
 
     function redirectToAffiliate() {
       if (!currentActiveProduct) return;
-      try {
-        fetch(API_BASE + `/api/click/${currentActiveProduct.id}`, { method: 'POST' }).catch(() => {});
-      } catch (e) {}
-
-      // Abre diretamente o link oficial de afiliado da Shopee do produto
-      const targetUrl = currentActiveProduct.affiliate_link || `/r/${currentActiveProduct.id}`;
-      window.open(targetUrl, '_blank', 'noopener,noreferrer');
+      const eventId=crypto.randomUUID();
+      const channel=['grupo','status'].includes(new URLSearchParams(location.search).get('origem'))?new URLSearchParams(location.search).get('origem'):'site';
+      fetch(API_BASE+`/api/click/${currentActiveProduct.id}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({event_id:eventId,channel}),keepalive:true}).catch(()=>{});
+      const target=currentActiveProduct.affiliate_link;
+      try {const u=new URL(target);if(u.protocol!=='https:'||!['shopee.com.br','www.shopee.com.br','s.shopee.com.br','shope.ee'].includes(u.hostname))throw new Error();window.open(u.href,'_blank','noopener,noreferrer');}
+      catch {alert('Este link está indisponível. Atualize a oferta antes de comprar.');}
     }
 
     function shareOnWhatsApp() {
@@ -2602,11 +2426,11 @@
         ? `~De R$ ${currentActiveProduct.price_original.toFixed(2).replace('.', ',')}~\n`
         : '';
       const discFmt = currentActiveProduct.discount_pct ? `(-${currentActiveProduct.discount_pct}% OFF)` : '';
-      const rating = currentActiveProduct.rating ? currentActiveProduct.rating.toFixed(1) : '4.8';
-      const sales = currentActiveProduct.sales_count || 'Mais Vendido';
-      const shop = currentActiveProduct.shop_name || 'Loja Verificada na Shopee';
+      const rating = currentActiveProduct.rating ? currentActiveProduct.rating.toFixed(1) : 'Não informada';
+      const sales = currentActiveProduct.sales_count || 'Vendas não informadas';
+      const shop = currentActiveProduct.shop_name || 'Confira a loja no anúncio';
 
-      const text = `🔥 *ACHADINHO IMPERDÍVEL NA SHOPEE* 🔥\n\n*${currentActiveProduct.title}*\n\n⭐ Avaliação ${rating}/5 | 🔥 ${sales}\n🏪 Loja: ${shop}\n\n${origPriceFmt}💰 *Por apenas R$ ${priceFmt}* ${discFmt}\n\n🛒 *Compre no link oficial com desconto:*\n👉 ${shopeeLink}`;
+      const text = `🔥 *ACHADO NA SHOPEE* 🔥\n\n*${currentActiveProduct.title}*\n\n⭐ Avaliação ${rating}/5 | 🔥 ${sales}\n🏪 Loja: ${shop}\n\n${origPriceFmt}💰 *Por apenas R$ ${priceFmt}* ${discFmt}\n\n🛒 *Confira no anúncio:*\n👉 ${shopeeLink}\n\nLink de afiliado: posso receber comissão. Confira preço, variação e frete antes de comprar.`;
 
       window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
     }
@@ -2615,7 +2439,7 @@
       if (!currentActiveProduct) return;
       const shopeeLink = currentActiveProduct.affiliate_link || (window.location.origin + `/r/${currentActiveProduct.id}`);
       navigator.clipboard.writeText(shopeeLink).then(() => {
-        alert('✅ Link oficial da Shopee copiado com sucesso!\n\nAo colar no WhatsApp ou redes sociais, a foto, nome da loja e detalhes do produto aparecem automaticamente.');
+        alert('✅ Link oficial da Shopee copiado com sucesso!\n\nA exibição de foto e detalhes depende do aplicativo em que você colar.');
       }).catch(() => {
         prompt('Copie o seu link oficial da Shopee:', shopeeLink);
       });
@@ -2630,11 +2454,11 @@
         ? `~De R$ ${prod.price_original.toFixed(2).replace('.', ',')}~\n`
         : '';
       const discFmt = prod.discount_pct ? `(-${prod.discount_pct}% OFF)` : '';
-      const rating = prod.rating ? prod.rating.toFixed(1) : '4.8';
-      const sales = prod.sales_count || 'Mais Vendido';
-      const shop = prod.shop_name || 'Loja Verificada na Shopee';
+      const rating = prod.rating ? prod.rating.toFixed(1) : 'Não informada';
+      const sales = prod.sales_count || 'Vendas não informadas';
+      const shop = prod.shop_name || 'Confira a loja no anúncio';
 
-      const text = `🔥 *ACHADINHO IMPERDÍVEL NA SHOPEE* 🔥\n\n*${prod.title}*\n\n⭐ Avaliação ${rating}/5 | 🔥 ${sales}\n🏪 Loja: ${shop}\n\n${origPriceFmt}💰 *Por apenas R$ ${priceFmt}* ${discFmt}\n\n🛒 *Compre no link oficial com desconto:*\n👉 ${shopeeLink}`;
+      const text = `🔥 *ACHADO NA SHOPEE* 🔥\n\n*${prod.title}*\n\n⭐ Avaliação ${rating}/5 | 🔥 ${sales}\n🏪 Loja: ${shop}\n\n${origPriceFmt}💰 *Por apenas R$ ${priceFmt}* ${discFmt}\n\n🛒 *Confira no anúncio:*\n👉 ${shopeeLink}\n\nLink de afiliado: posso receber comissão. Confira preço, variação e frete antes de comprar.`;
 
       window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
     }
@@ -2644,7 +2468,7 @@
       if (!prod) return;
       const shopeeLink = prod.affiliate_link || (window.location.origin + `/r/${prod.id}`);
       navigator.clipboard.writeText(shopeeLink).then(() => {
-        alert('✅ Link oficial da Shopee copiado com sucesso!\n\nAo colar no WhatsApp ou redes sociais, a foto, nome da loja e detalhes do produto aparecem automaticamente.');
+        alert('✅ Link oficial da Shopee copiado com sucesso!\n\nA exibição de foto e detalhes depende do aplicativo em que você colar.');
       }).catch(() => {
         prompt('Copie o seu link oficial da Shopee:', shopeeLink);
       });
@@ -2903,5 +2727,6 @@
       }
     });
   </script>
+  <script src="/campaign.js"></script>
 </body>
 </html>

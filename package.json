@@ -4,13 +4,19 @@
   "description": "Vitrine de Achadinhos e Vendas Automatizadas para Afiliados da Shopee",
   "main": "server.js",
   "scripts": {
-    "build": "echo Build OK",
+    "build": "npm run check",
+    "check": "node scripts/check.cjs",
+    "test": "node --test tests/*.test.cjs",
     "start": "node server.js"
   },
   "dependencies": {
+    "@netlify/blobs": "11.1.6",
     "@whiskeysockets/baileys": "^7.0.0-rc14",
     "express": "^4.21.2",
     "pino": "^10.4.0",
     "qrcode": "^1.5.4"
+  },
+  "engines": {
+    "node": ">=24"
   }
 }

@@ -1,0 +1,22 @@
+'use strict';
+const {test}=require('node:test'),assert=require('node:assert/strict'),{spawn}=require('node:child_process'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
+test('servidor isolado: páginas, cliques, autenticação e bloqueio do WhatsApp', {timeout:30000}, async t=>{
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'shopee-http-'));
+  const child=spawn(process.execPath,['server.js'],{cwd:path.resolve(__dirname,'..'),env:{...process.env,SHOPEE_SAFE_MODE:'1',SHOPEE_DB_PATH:path.join(dir,'fixture.db'),SHOPEE_PROMO_PATH:path.join(dir,'promos.json'),ADMIN_PASSWORD:'test-only-password',PORT:'0',HOST:'127.0.0.1'},stdio:['ignore','pipe','pipe']});
+  t.after(()=>child.kill());
+  const port=await new Promise((resolve,reject)=>{let output='';const timer=setTimeout(()=>reject(Error('Prévia não iniciou')),15000);child.once('error',reject);child.once('exit',code=>{clearTimeout(timer);reject(Error('Processo encerrado: '+code));});child.stdout.on('data',chunk=>{output+=chunk;const m=output.match(/ShopeeTreasures: http:\/\/localhost:(\d+)/);if(m){clearTimeout(timer);resolve(m[1]);}});});
+  const base=`http://127.0.0.1:${port}`;
+  const call=async(route,method='GET',body,auth=false)=>fetch(base+route,{method,headers:{'Content-Type':'application/json',...(auth?{Authorization:'Bearer test-only-password'}:{})},body:body===undefined?undefined:JSON.stringify(body)});
+  for(const route of ['/','/vip','/grupo','/admin','/produto/900001','/storefront.css'])assert.equal((await call(route)).status,200,route);
+  const products=await (await call('/api/products')).json();assert.equal(products.length,2);assert.match(products[0].title,/EXEMPLO/);
+  const id=products[0].id,event={event_id:'550e8400-e29b-41d4-a716-446655440000',channel:'site'};
+  assert.equal((await call('/api/admin/products')).status,401);
+  assert.equal((await call('/api/settings','POST',{site_title:'test'})).status,401);
+  assert.equal((await call('/api/admin/whatsapp/connect','POST',{},true)).status,403);
+  assert.equal((await (await call(`/api/click/${id}`,'POST',event)).json()).recorded,true);
+  assert.equal((await (await call(`/api/click/${id}`,'POST',event)).json()).recorded,false);
+  const stats=await (await call('/api/admin/analytics','GET',undefined,true)).json();assert.equal(stats.total,1);assert.equal(stats.sales,null);
+  const rows=await (await call('/api/admin/products','GET',undefined,true)).json();assert.equal(rows.find(p=>p.id===id).clicks,1);
+  const status=await (await call('/api/admin/whatsapp/status','GET',undefined,true)).json();assert.equal(status.safeMode,true);
+  const publicSettings=await (await call('/api/settings')).json();assert.equal(publicSettings.admin_password,undefined);
+});

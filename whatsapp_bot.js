@@ -1,12 +1,17 @@
-const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
-const pino = require('pino');
-const QRCode = require('qrcode');
+const { formatOffer, normalizeOffer } = require('./lib/offers');
+const { validateConfig, dueSlot, clockParts, KEYWORDS, ZONE } = require('./lib/schedule');
+const crypto = require('node:crypto');
+const SAFE_MODE = process.env.SHOPEE_SAFE_MODE === '1';
+let dispatchInFlight = false, lastAutoAttempt = 0, lockOwned = false;
+let makeWASocket, useMultiFileAuthState, DisconnectReason, pino, QRCode;
+
+
 const path = require('path');
 const fs = require('fs');
 const db = require('./db.js');
 
 const SESSION_DIR = path.join(__dirname, 'wa_session');
-if (!fs.existsSync(SESSION_DIR)) {
+if (!SAFE_MODE && !fs.existsSync(SESSION_DIR)) {
   fs.mkdirSync(SESSION_DIR, { recursive: true });
 }
 
@@ -37,6 +42,7 @@ let lastPostTimestamp = parseInt(getBotSetting('wa_last_post_timestamp', '0'), 1
 // Resolve target group JID using invite code
 async function resolveGroupJid(inviteUrlOrCode) {
   if (!sock) return null;
+  targetGroupJid = null;
   let code = inviteUrlOrCode || '';
   const match = code.match(/chat\.whatsapp\.com\/([A-Za-z0-9_-]+)/);
   if (match) code = match[1];
@@ -53,26 +59,31 @@ async function resolveGroupJid(inviteUrlOrCode) {
     console.warn('[WhatsApp Bot] Não foi possível obter info do grupo via link:', err.message);
   }
 
-  // Fallback: search in participating groups
-  try {
-    const participating = await sock.groupFetchAllParticipating();
-    for (const [jid, group] of Object.entries(participating)) {
-      if (group.subject && (group.subject.toLowerCase().includes('shopeetreasures') || group.subject.toLowerCase().includes('vip'))) {
-        targetGroupJid = jid;
-        setBotSetting('wa_target_group_jid', targetGroupJid);
-        console.log(`[WhatsApp Bot] Grupo VIP localizado nos grupos ativos: "${group.subject}" (${targetGroupJid})`);
-        return targetGroupJid;
-      }
-    }
-  } catch (err) {
-    console.warn('[WhatsApp Bot] Erro ao listar grupos participantes:', err.message);
-  }
-
-  return targetGroupJid;
+  targetGroupJid = null;
+  return null;
 }
 
 // Start or reconnect Baileys socket
 async function initWhatsApp(forceNew = false) {
+  if (SAFE_MODE) { lastError = 'Prévia isolada: WhatsApp desabilitado.'; return; }
+  if (!lockOwned) {
+    const lockPath = path.join(__dirname, 'whatsapp.lockfile');
+    try { fs.writeFileSync(lockPath, String(process.pid), { flag: 'wx' }); }
+    catch (e) {
+      if (e.code !== 'EEXIST') throw e;
+      const owner = Number(fs.readFileSync(lockPath, 'utf8'));
+      if (!Number.isInteger(owner) || owner < 1) { lastError='Arquivo de controle inválido. Revise o processo antes de conectar.'; return; }
+      try { process.kill(owner, 0); lastError='Outro processo já controla o WhatsApp.'; return; }
+      catch (err) { if (err.code !== 'ESRCH') { lastError='Não foi possível confirmar o processo ativo.'; return; } }
+      fs.unlinkSync(lockPath); fs.writeFileSync(lockPath, String(process.pid), { flag:'wx' });
+    }
+    lockOwned = true;
+    process.once('exit', () => { try { if (fs.readFileSync(lockPath,'utf8') === String(process.pid)) fs.unlinkSync(lockPath); } catch {} });
+  }
+  ({ default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys'));
+  pino = require('pino'); QRCode = require('qrcode');
+  if (forceNew && sock) { sock.ev?.removeAllListeners?.(); sock.end?.(); sock=null; }
+
   if (sock && !forceNew) return;
 
   try {
@@ -134,8 +145,7 @@ async function initWhatsApp(forceNew = false) {
           targetGroupJid = null;
           lastError = 'Sessão desconectada pelo aparelho. É necessário escanear novamente.';
           try {
-            fs.rmSync(SESSION_DIR, { recursive: true, force: true });
-            fs.mkdirSync(SESSION_DIR, { recursive: true });
+            // Preserva os arquivos da sessão para revisão pelo proprietário.
           } catch (e) {}
         } else {
           // Temporary glitch or network reset: auto reconnect
@@ -167,149 +177,71 @@ async function disconnectWhatsApp() {
   targetGroupJid = null;
 
   try {
-    fs.rmSync(SESSION_DIR, { recursive: true, force: true });
-    fs.mkdirSync(SESSION_DIR, { recursive: true });
+    // O logout não remove os arquivos da sessão.
   } catch (e) {}
 
   return { success: true };
 }
 
 // Format single product into WhatsApp promotional copy
-function formatProductOffer(product) {
-  const priceDiscount = parseFloat(product.priceCurrent || product.price_discount || 0);
-  const origPrice = parseFloat(product.originalPrice || product.price_original || (priceDiscount * 1.5));
-  const discountPct = product.discountPct || product.discount_pct || 40;
-  const rating = product.ratingStar || product.rating || 4.9;
-  const sales = product.salesCount || product.sales_count || 'Mais Vendido';
-  const shop = product.shopName || product.shop_name || 'Loja Verificada Shopee';
-  const link = product.offerLink || product.affiliate_link || 'https://shopeetreasures-vip.netlify.app/';
-
-  const origPriceFormatted = origPrice > priceDiscount ? `~De R$ ${origPrice.toFixed(2).replace('.', ',')}~\n` : '';
-  const discountFormatted = `R$ ${priceDiscount.toFixed(2).replace('.', ',')}`;
-  const savings = origPrice > priceDiscount ? `\n💵 Economia de: *R$ ${(origPrice - priceDiscount).toFixed(2).replace('.', ',')}*` : '';
-
-  return `🔥 *ACHADINHO IMPERDÍVEL NA SHOPEE* 🔥\n\n📦 *${product.productName || product.title}*\n\n⭐ Avaliação: *${rating}* / 5.0 (${sales})\n🏪 Loja: *${shop}*\n\n${origPriceFormatted}💰 *Por apenas: ${discountFormatted}* (-${discountPct}% OFF)${savings}\n\n🛒 *COMPRE NO LINK OFICIAL COM DESCONTO:*\n👉 ${link}\n\n💎 *ShopeeTreasures VIP #1 | Oferta Verificada*`;
-}
+function formatProductOffer(product) { return formatOffer(product); }
 
 // Dispatch an offer to WhatsApp
-async function dispatchOffer(specificProduct = null, isManual = false) {
-  if (connectionStatus !== 'connected' || !sock) {
-    throw new Error('O robô do WhatsApp não está conectado. Escaneie o QR Code no painel.');
-  }
-
-  // Ensure target group JID is resolved
-  if (!targetGroupJid) {
-    const savedLink = getBotSetting('whatsapp_link', 'https://chat.whatsapp.com/KjHrqfJp3HuIHQiR8Zfl3L');
-    await resolveGroupJid(savedLink);
-  }
-
-  if (!targetGroupJid) {
-    throw new Error('Não foi possível identificar o grupo de destino. Verifique o link do grupo nas configurações.');
-  }
-
-  // Pick product to post
-  let product = specificProduct;
-  if (!product) {
-    // 1. Tenta carregar do pool de promoções (promo_output.json)
-    const promoPath = path.join(__dirname, 'promo_output.json');
-    if (fs.existsSync(promoPath)) {
-      try {
-        const promoData = JSON.parse(fs.readFileSync(promoPath, 'utf-8'));
-        const products = promoData.products || [];
-        
-        // Pega os IDs já postados gravados no banco
-        const postedRows = db.prepare('SELECT id FROM posted_deals').all();
-        const persistentPosted = new Set(postedRows.map(r => String(r.id)));
-
-        // Filtra produtos que nunca foram postados
-        const unposted = products.filter(p => !persistentPosted.has(String(p.itemId || p.id)) && !postedItemIds.has(String(p.itemId || p.id)));
-
-        if (unposted.length > 0) {
-          // Seleciona um produto aleatório dentre os não postados (não pega sempre o primeiro!)
-          product = unposted[Math.floor(Math.random() * unposted.length)];
-        }
-      } catch (e) {}
-    }
-
-    // 2. Fallback: seleciona aleatoriamente do banco de dados produtos com avaliação >= 4.7 e desconto >= 30%
-    if (!product) {
-      try {
-        const dbCandidates = db.prepare(`
-          SELECT * FROM products 
-          WHERE is_active = 1 
-            AND rating >= 4.7 
-            AND discount_pct >= 30 
-            AND id NOT IN (SELECT id FROM posted_deals)
-          ORDER BY RANDOM()
-          LIMIT 1
-        `).get();
-        if (dbCandidates) product = dbCandidates;
-      } catch (e) {}
-    }
-
-    // 3. Se todos já foram postados, pega qualquer produto aleatório de alta qualidade
-    if (!product) {
-      product = db.prepare('SELECT * FROM products WHERE is_active = 1 AND rating >= 4.7 ORDER BY RANDOM() LIMIT 1').get();
-    }
-  }
-
-  if (!product) {
-    throw new Error('Nenhum produto disponível para envio. Gere novas promoções pelo robô.');
-  }
-
-  const messageText = (product && product.customMessage) ? product.customMessage : formatProductOffer(product);
-  const imageUrl = product.imageUrl || product.image_url;
-
-  let sendResult = null;
-
+function campaignConfig() {
+  return validateConfig({slots: JSON.parse(getBotSetting('wa_slots','["12:00","19:00"]')), categories: JSON.parse(getBotSetting('wa_categories','[]')), maxDaily: Number(getBotSetting('wa_max_daily','2'))});
+}
+async function dispatchOffer(specificProduct = null, isManual = false, scheduled = null) {
+  if (SAFE_MODE) throw new Error('Prévia isolada: nenhum envio é permitido.');
+  if (dispatchInFlight) throw new Error('Já existe um envio em andamento.');
+  if (connectionStatus !== 'connected' || !sock) throw new Error('WhatsApp desconectado.');
+  dispatchInFlight = true;
+  let attemptId = null;
   try {
-    if (imageUrl && imageUrl.startsWith('http')) {
-      try {
-        sendResult = await sock.sendMessage(targetGroupJid, {
-          image: { url: imageUrl },
-          caption: messageText
-        });
-      } catch (mediaErr) {
-        console.warn(`[WhatsApp Bot] Aviso: falha ao carregar imagem (${mediaErr.message}). Enviando oferta formatada como texto...`);
-        sendResult = await sock.sendMessage(targetGroupJid, { text: messageText });
-      }
+    if (!targetGroupJid) await resolveGroupJid(getBotSetting('whatsapp_link',''));
+    if (!targetGroupJid) throw new Error('Confira o convite do grupo. Nenhum grupo é escolhido pelo nome.');
+    const config = campaignConfig();
+    const api = require('./shopee_api');
+    let product = specificProduct;
+    if (!product) {
+      if (!config.categories.length) throw new Error('Escolha as categorias antes de gerar o envio.');
+      const fresh = await require('./promo_bot').generatePromos({keywords:config.categories.flatMap(c=>KEYWORDS[c]),targetCount:15});
+      const recent = new Set(db.prepare('SELECT source_key FROM dispatch_history WHERE created_at > ?').all(Date.now()-7*86400000).map(r=>r.source_key));
+      product = fresh.products.find(p=>!recent.has('item:'+String(p.itemId)));
+      if (!product) throw new Error('Não há oferta nova adequada. O envio será pulado.');
     } else {
-      // Send text only
-      sendResult = await sock.sendMessage(targetGroupJid, { text: messageText });
+      let itemId = product.itemId || product.source_item_id;
+      if (!itemId && product.id) itemId = db.prepare('SELECT source_item_id FROM products WHERE id = ?').get(product.id)?.source_item_id;
+      if (!itemId) throw new Error('Atualize esse produto pela busca antes de enviar; falta o ID original.');
+      product = await api.fetchProductById(itemId);
+      if (!product) throw new Error('Oferta indisponível na Shopee.');
     }
-
-    const itemId = String(product.itemId || product.id || Date.now());
-    postedItemIds.add(itemId);
-    try {
-      db.prepare('INSERT OR IGNORE INTO posted_deals (id, title) VALUES (?, ?)').run(itemId, product.productName || product.title);
-    } catch (dbErr) {}
-
-    lastPostTimestamp = Date.now();
-    setBotSetting('wa_last_post_timestamp', lastPostTimestamp);
-
-    const logEntry = {
-      id: Date.now(),
-      title: product.productName || product.title,
-      price: product.priceCurrent || product.price_discount,
-      timestamp: new Date().toISOString(),
-      type: isManual ? 'manual' : 'automatic',
-      status: 'success'
-    };
-
-    dispatchedLog.unshift(logEntry);
-    if (dispatchedLog.length > 50) dispatchedLog.pop();
-
-    console.log(`[WhatsApp Bot] Oferta enviada no grupo com sucesso: "${product.productName || product.title}"`);
-    return { success: true, product: logEntry };
-
-  } catch (err) {
-    console.error('[WhatsApp Bot] Erro ao enviar mensagem no grupo:', err);
-    throw new Error('Falha no envio da mensagem: ' + err.message);
-  }
+    const normalized = normalizeOffer(product), messageText = formatOffer(product);
+    const sourceKey = 'item:'+String(product.itemId || normalized.source_item_id);
+    const day = clockParts().day, slot = scheduled?.slot || 'manual-'+crypto.randomUUID();
+    if (scheduled) {
+      const due = dueSlot(config, db.prepare('SELECT day_key,slot,kind FROM dispatch_history WHERE day_key=?').all(day));
+      if (!due || due.slot !== scheduled.slot) throw new Error('Horário já atendido ou fora da janela.');
+    }
+    const record = db.prepare('INSERT OR IGNORE INTO dispatch_history(source_key,title,day_key,slot,kind,status,created_at) VALUES(?,?,?,?,?,?,?)').run(sourceKey,normalized.title,day,slot,scheduled?'automatic':'manual','pending',Date.now());
+    if (!record.changes) throw new Error('Este horário já foi reservado.');
+    attemptId = record.lastInsertRowid;
+    // Um único envio. Erro de rede não provoca um segundo envio potencialmente duplicado.
+    const imageUrl=normalized.image_url;
+    await sock.sendMessage(targetGroupJid, imageUrl?.startsWith('https://') ? {image:{url:imageUrl},caption:messageText} : {text:messageText});
+    db.prepare("UPDATE dispatch_history SET status='sent' WHERE id=?").run(attemptId);
+    lastPostTimestamp=Date.now();setBotSetting('wa_last_post_timestamp',lastPostTimestamp);
+    const entry={id:Date.now(),title:normalized.title,price:normalized.price_discount,timestamp:new Date().toISOString(),type:scheduled?'automatic':'manual',status:'success'};
+    dispatchedLog.unshift(entry);if(dispatchedLog.length>50)dispatchedLog.pop();
+    return {success:true,product:entry};
+  } catch(error) {
+    if(attemptId) db.prepare("UPDATE dispatch_history SET status='failed' WHERE id=?").run(attemptId);
+    throw error;
+  } finally { dispatchInFlight=false; }
 }
 
 // Enviar enquete interativa nativa do WhatsApp no grupo VIP
 async function dispatchPoll({ name, values, selectableCount = 0 } = {}) {
+  if (SAFE_MODE) throw new Error('Prévia isolada: enquetes desabilitadas.');
   if (connectionStatus !== 'connected' || !sock) {
     throw new Error('WhatsApp não está conectado. Conecte pelo painel admin primeiro.');
   }
@@ -367,51 +299,44 @@ async function dispatchPoll({ name, values, selectableCount = 0 } = {}) {
 
 // Background scheduler loop (runs every 30 seconds to check if post is due)
 function startSchedulerLoop() {
-  if (autoPostIntervalTimer) clearInterval(autoPostIntervalTimer);
-
-  autoPostIntervalTimer = setInterval(async () => {
-    if (!isAutoPostEnabled) return;
-    if (connectionStatus !== 'connected' || !sock) return;
-
-    const intervalMs = autoPostIntervalMin * 60 * 1000;
-    const timeSinceLast = Date.now() - lastPostTimestamp;
-
-    if (timeSinceLast >= intervalMs) {
-      console.log(`[WhatsApp Bot Auto-Cron] Intervalo de ${autoPostIntervalMin} min atingido. Atualizando promoções e enviando próxima oferta...`);
-      try {
-        // Auto-refresh: gera novas promoções antes de cada envio automático
-        try {
-          const promoBot = require('./promo_bot');
-          // Mantém o histórico para NUNCA repetir produtos já enviados
-          console.log('[WhatsApp Bot Auto-Cron] ✅ Novas promoções sincronizadas da Shopee API.');
-        } catch (refreshErr) {
-          console.warn('[WhatsApp Bot Auto-Cron] Aviso: não foi possível atualizar promoções:', refreshErr.message);
-        }
-        await dispatchOffer(null, false);
-      } catch (err) {
-        console.warn('[WhatsApp Bot Auto-Cron] Erro no envio agendado:', err.message);
-      }
-    }
-  }, 30 * 1000);
+  if (SAFE_MODE) return;
+  if(autoPostIntervalTimer) clearInterval(autoPostIntervalTimer);
+  autoPostIntervalTimer=setInterval(async()=>{
+    if(!isAutoPostEnabled||connectionStatus!=='connected'||dispatchInFlight||Date.now()-lastAutoAttempt<120000)return;
+    try {
+      const config=campaignConfig(),day=clockParts().day;
+      const due=dueSlot(config,db.prepare('SELECT day_key,slot,kind FROM dispatch_history WHERE day_key=?').all(day));
+      if(!due)return;
+      lastAutoAttempt=Date.now();
+      await dispatchOffer(null,false,due);
+    } catch(error) {lastError=error.message;console.warn('[Agendamento]',error.message);}
+  },30000);
 }
 
-// Update configuration
-function setConfig({ autoPostEnabled, intervalMinutes }) {
-  if (typeof autoPostEnabled === 'boolean') {
-    isAutoPostEnabled = autoPostEnabled;
-    setBotSetting('wa_auto_post_enabled', isAutoPostEnabled ? '1' : '0');
-  }
-  if (typeof intervalMinutes === 'number' && intervalMinutes >= 15) {
-    autoPostIntervalMin = intervalMinutes;
-    setBotSetting('wa_auto_post_interval_min', autoPostIntervalMin);
-  }
+// Todas as opções são validadas antes da gravação.
+function setConfig(input) {
+  const cfg=validateConfig({...campaignConfig(),...input});
+  if(input.autoPostEnabled===true&&!cfg.categories.length)throw new Error('Escolha ao menos uma categoria.');
+  db.exec('BEGIN');
+  try {
+    setBotSetting('wa_slots',JSON.stringify(cfg.slots));
+    setBotSetting('wa_categories',JSON.stringify(cfg.categories));
+    setBotSetting('wa_max_daily',cfg.maxDaily);
+    if(typeof input.autoPostEnabled==='boolean')setBotSetting('wa_auto_post_enabled',input.autoPostEnabled?'1':'0');
+    db.exec('COMMIT');
+  } catch(error) {db.exec('ROLLBACK');throw error;}
+  if(typeof input.autoPostEnabled==='boolean')isAutoPostEnabled=input.autoPostEnabled;
   return getStatus();
 }
 
 // Get full status object for admin API
 function getStatus() {
   return {
-    status: connectionStatus,
+    ...campaignConfig(),
+    timezone: ZONE,
+    safeMode: SAFE_MODE,
+    needsCategories: !campaignConfig().categories.length,
+    status: SAFE_MODE ? 'safe_preview' : connectionStatus,
     qrCode: currentQrCodeDataUrl,
     user: connectedUser,
     targetGroupJid: targetGroupJid,
@@ -424,7 +349,7 @@ function getStatus() {
 }
 
 // Auto-start WhatsApp connection if saved session exists
-if (fs.existsSync(SESSION_DIR) && fs.readdirSync(SESSION_DIR).length > 0) {
+if (!SAFE_MODE && fs.existsSync(SESSION_DIR) && fs.readdirSync(SESSION_DIR).length > 0) {
   initWhatsApp(false);
 }
 
