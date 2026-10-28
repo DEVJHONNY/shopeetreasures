@@ -20,7 +20,7 @@ function probe() {
       response.on('end', () => done(response.statusCode === 200 && body.includes('Painel do Afiliado') && body.includes('loginModal') ? 'running' : 'occupied'));
       response.on('error', () => done('occupied'));
     });
-    request.setTimeout(5000, () => { done('occupied'); request.destroy(); });
+    request.setTimeout(20000, () => { done('occupied'); request.destroy(); });
     request.on('error', error => done(error.code === 'ECONNREFUSED' ? 'stopped' : 'occupied'));
   });
 }
