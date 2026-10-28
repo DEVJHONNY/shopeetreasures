@@ -1,3 +1,6 @@
+require('./lib/env');
+const { normalizeOffer, affiliateUrl } = require('./lib/offers');
+const SAFE_MODE = process.env.SHOPEE_SAFE_MODE === '1';
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -6,7 +9,7 @@ const shopeeApi = require('./shopee_api');
 const promoBot = require('./promo_bot');
 const whatsappBot = require('./whatsapp_bot');
 
-const PORT = process.env.PORT || 4000;
+const PORT = Number(process.env.PORT ?? 4000);
 const PUBLIC_DIR = path.join(__dirname, 'public');
 
 const mimeTypes = {
@@ -52,8 +55,8 @@ function checkAuth(req) {
   const authHeader = req.headers['authorization'] || '';
   const token = authHeader.replace('Bearer ', '').trim();
   const setting = db.prepare("SELECT value FROM settings WHERE key = 'admin_password'").get();
-  const currentPassword = setting ? setting.value : 'Luc@S076140';
-  return token === currentPassword;
+  const currentPassword = process.env.ADMIN_PASSWORD || setting?.value || '';
+  return !!currentPassword && token === currentPassword;
 }
 
 // Helper para formataÃ§Ã£o de contagem de vendas com alto apelo visual
@@ -80,62 +83,15 @@ function escapeHtml(str) {
 
 // Upsert padronizado de produtos obtidos da Shopee Open API
 function upsertShopeeProduct(item, defaultCategory = 'Achadinhos') {
-  if (!item || !item.productName || !item.offerLink) return null;
-
-  const price = parseFloat(item.priceMin || item.priceMax || 0);
-  if (price <= 0) return null;
-
-  const discountPct = parseInt(item.priceDiscountRate || 0, 10);
-  let originalPrice = null;
-  if (discountPct > 0 && price > 0) {
-    originalPrice = price / (1 - (discountPct / 100));
-  }
-
-  const salesFormatted = formatSales(item.sales);
-  const rating = parseFloat(item.ratingStar || 4.8);
-  const badge = rating >= 4.8 ? 'ðŸ”¥ Top Escolha' : 'â­ Verificado';
-  const shopName = item.shopName || 'Loja Verificada na Shopee';
-
-  const existing = db.prepare('SELECT id FROM products WHERE title = ?').get(item.productName);
-  if (existing) {
-    db.prepare(`
-      UPDATE products 
-      SET price_discount = ?, price_original = ?, discount_pct = ?, sales_count = ?, rating = ?, shop_name = COALESCE(?, shop_name), affiliate_link = ?, image_url = ?
-      WHERE id = ?
-    `).run(
-      parseFloat(price.toFixed(2)),
-      originalPrice ? parseFloat(originalPrice.toFixed(2)) : null,
-      discountPct,
-      salesFormatted,
-      rating,
-      shopName,
-      item.offerLink,
-      item.imageUrl,
-      existing.id
-    );
+  const p=normalizeOffer(item,defaultCategory);
+  if(!p.title||!p.price_discount||!p.affiliate_link)return null;
+  // Preserve local IDs so existing links and historical clicks keep working.
+  const existing=db.prepare('SELECT id FROM products WHERE source_item_id=? OR (source_item_id IS NULL AND title=?) ORDER BY source_item_id DESC LIMIT 1').get(p.source_item_id,p.title);
+  if(existing){
+    db.prepare('UPDATE products SET title=?,price_discount=?,price_original=?,discount_pct=?,sales_count=?,rating=?,shop_name=?,affiliate_link=?,image_url=?,source_item_id=?,checked_at=? WHERE id=?').run(p.title,p.price_discount,p.price_original,p.discount_pct,p.sales_count,p.rating,p.shop_name,p.affiliate_link,p.image_url,p.source_item_id,p.checked_at,existing.id);
     return existing.id;
-  } else {
-    const insertStmt = db.prepare(`
-      INSERT INTO products (title, description, price_original, price_discount, discount_pct, category, image_url, affiliate_link, badge, sales_count, rating, shop_name, video_url)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-    const info = insertStmt.run(
-      item.productName,
-      'Produto oficial verificado e selecionado pela curadoria ShopeeTreasures com link direto para a loja oficial.',
-      originalPrice ? parseFloat(originalPrice.toFixed(2)) : null,
-      parseFloat(price.toFixed(2)),
-      discountPct,
-      defaultCategory,
-      item.imageUrl,
-      item.offerLink,
-      badge,
-      salesFormatted,
-      rating,
-      shopName,
-      null
-    );
-    return info.lastInsertRowid;
   }
+  return db.prepare('INSERT INTO products(title,description,price_original,price_discount,discount_pct,category,image_url,affiliate_link,badge,sales_count,rating,shop_name,source_item_id,checked_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(p.title,p.description,p.price_original,p.price_discount,p.discount_pct,p.category,p.image_url,p.affiliate_link,p.badge,p.sales_count,p.rating,p.shop_name,p.source_item_id,p.checked_at).lastInsertRowid;
 }
 
 // ==========================================
@@ -218,7 +174,8 @@ function startAutoCron(hours = 6) {
   cronTimer = setInterval(executeAutoSync, ms);
 }
 
-startAutoCron(6);
+if (!SAFE_MODE) startAutoCron(6);
+else shopeeApi.fetchTopOffers().then(items => items.forEach(p => upsertShopeeProduct(p, 'Casa & Cozinha')));
 
 const server = http.createServer(async (req, res) => {
   if (req.method === 'OPTIONS') {
@@ -233,6 +190,9 @@ const server = http.createServer(async (req, res) => {
 
   const reqUrl = new URL(req.url, `http://localhost:${PORT}`);
   const pathname = reqUrl.pathname;
+  if (req.method !== 'GET' && !['/api/admin/login'].includes(pathname) && !/^\/api\/click\/\d+$/.test(pathname) && !checkAuth(req)) return sendJson(res, 401, {error:'Não autorizado.'});
+  if (SAFE_MODE && /^\/api\/admin\/whatsapp\/(connect|send)/.test(pathname)) return sendJson(res, 403, {error:'Prévia isolada: WhatsApp bloqueado.'});
+
 
   try {
     // ==========================================
@@ -240,7 +200,7 @@ const server = http.createServer(async (req, res) => {
     // ==========================================
 
     if (pathname === '/api/settings' && req.method === 'GET') {
-      const rows = db.prepare("SELECT key, value FROM settings WHERE key != 'admin_password'").all();
+      const rows = db.prepare("SELECT key, value FROM settings WHERE key IN ('site_title','site_subtitle','site_badge','site_disclaimer','whatsapp_link','instagram_link')").all();
       const settings = {};
       for (const row of rows) settings[row.key] = row.value;
       return sendJson(res, 200, settings);
@@ -251,7 +211,7 @@ const server = http.createServer(async (req, res) => {
       const body = await parseBody(req);
       const stmt = db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)');
       for (const [k, v] of Object.entries(body)) {
-        if (k !== 'admin_password') {
+        if (['site_title','site_subtitle','site_badge','site_disclaimer','whatsapp_link','instagram_link'].includes(k)) {
           stmt.run(k, String(v));
         }
       }
@@ -396,7 +356,7 @@ const server = http.createServer(async (req, res) => {
       const product = db.prepare('SELECT affiliate_link FROM products WHERE id = ?').get(id);
 
       if (product && product.affiliate_link) {
-        db.prepare('UPDATE products SET clicks = clicks + 1 WHERE id = ?').run(id);
+        if (!affiliateUrl(product.affiliate_link)) return sendJson(res, 404, {error:'Link indisponível.'});
         res.writeHead(302, { 'Location': product.affiliate_link });
         return res.end();
       } else {
@@ -407,10 +367,19 @@ const server = http.createServer(async (req, res) => {
 
     const matchClick = pathname.match(/^\/api\/click\/(\d+)$/);
     if (matchClick && req.method === 'POST') {
-      const id = matchClick[1];
-      db.prepare('UPDATE products SET clicks = clicks + 1 WHERE id = ?').run(id);
-      const product = db.prepare('SELECT affiliate_link FROM products WHERE id = ?').get(id);
-      return sendJson(res, 200, { success: true, affiliate_link: product ? product.affiliate_link : null });
+      const body=await parseBody(req),id=matchClick[1];
+      if(!/^[a-f0-9-]{36}$/i.test(body.event_id||''))return sendJson(res,400,{error:'Identificador inválido.'});
+      if(!db.prepare('SELECT id FROM products WHERE id=? AND is_active=1').get(id))return sendJson(res,404,{error:'Oferta indisponível.'});
+      const channel=['site','grupo','status'].includes(body.channel)?body.channel:'site';
+      const result=db.prepare('INSERT OR IGNORE INTO click_events(event_id,product_id,channel) VALUES(?,?,?)').run(body.event_id,id,channel);
+      if(result.changes)db.prepare('UPDATE products SET clicks=clicks+1 WHERE id=?').run(id);
+      return sendJson(res,200,{success:true,recorded:!!result.changes});
+    }
+    if(pathname==='/api/admin/analytics'&&req.method==='GET'){
+      if(!checkAuth(req))return sendJson(res,401,{error:'Não autorizado.'});
+      const days=Math.min(30,Math.max(1,parseInt(reqUrl.searchParams.get('days'))||7));
+      const rows=db.prepare("SELECT product_id,count(*) as total FROM click_events WHERE created_at >= datetime('now',?) GROUP BY product_id").all('-'+days+' days');
+      return sendJson(res,200,{available:true,days,scope:'site_local',total:rows.reduce((s,r)=>s+r.total,0),by_product:Object.fromEntries(rows.map(r=>[r.product_id,r.total])),sales:null,notice:'Cliques locais registrados; não representam vendas ou pessoas únicas.'});
     }
 
     // ==========================================
@@ -534,7 +503,7 @@ const server = http.createServer(async (req, res) => {
           const price = parseFloat(item.priceMin || item.priceMax || 0);
           const discountPct = item.priceDiscountRate || 0;
           let originalPrice = null;
-          if (discountPct > 0 && price > 0) {
+          if (discountPct > 0 && discountPct < 100 && price > 0) {
             originalPrice = price / (1 - (discountPct / 100));
           }
 
@@ -554,8 +523,8 @@ const server = http.createServer(async (req, res) => {
             item.offerLink,
             item.ratingStar >= 4.8 ? 'Destaque' : 'Indicado',
             salesFormatted,
-            parseFloat(item.ratingStar || 4.8),
-            item.shopName || 'Loja Verificada na Shopee',
+            parseFloat(item.ratingStar) || null,
+            item.shopName || 'Confira a loja no anúncio',
             null
           );
           imported++;
@@ -622,10 +591,7 @@ const server = http.createServer(async (req, res) => {
     if (pathname === '/api/admin/whatsapp/config' && req.method === 'POST') {
       if (!checkAuth(req)) return sendJson(res, 401, { error: 'NÃ£o autorizado' });
       const body = await parseBody(req);
-      const newStatus = whatsappBot.setConfig({
-        autoPostEnabled: body.autoPostEnabled,
-        intervalMinutes: parseInt(body.intervalMinutes) || 60
-      });
+      const newStatus = whatsappBot.setConfig(body);
       return sendJson(res, 200, { success: true, status: newStatus });
     }
 
@@ -754,7 +720,7 @@ const server = http.createServer(async (req, res) => {
                 image_url: apiProduct.imageUrl || 'https://cf.shopee.com.br/file/br-11134207-820lt-msq8pkzchmh355',
                 affiliate_link: apiProduct.offerLink || link,
                 sales_count: apiProduct.sales || 'Destaque Oficial',
-                rating: parseFloat(apiProduct.ratingStar || 4.9),
+                rating: parseFloat(apiProduct.ratingStar) || null,
                 shop_name: apiProduct.shopName || 'Loja Shopee'
               };
             }
@@ -799,7 +765,7 @@ const server = http.createServer(async (req, res) => {
               image_url: productImg,
               affiliate_link: affLink || link,
               sales_count: 'Destaque Oficial',
-              rating: 4.9,
+              rating: null,
               shop_name: productShop
             };
           } catch (e) {
@@ -872,9 +838,9 @@ const server = http.createServer(async (req, res) => {
     if (pathname === '/api/admin/login' && req.method === 'POST') {
       const body = await parseBody(req);
       const setting = db.prepare("SELECT value FROM settings WHERE key = 'admin_password'").get();
-      const currentPassword = setting ? setting.value : 'Luc@S076140';
+      const currentPassword = process.env.ADMIN_PASSWORD || setting?.value || '';
 
-      if (body.password === currentPassword) {
+      if (currentPassword && body.password === currentPassword) {
         return sendJson(res, 200, { success: true, token: currentPassword });
       } else {
         return sendJson(res, 401, { success: false, error: 'Senha incorreta.' });
@@ -883,7 +849,7 @@ const server = http.createServer(async (req, res) => {
 
     if (pathname === '/api/admin/products' && req.method === 'GET') {
       if (!checkAuth(req)) return sendJson(res, 401, { error: 'NÃ£o autorizado' });
-      const products = db.prepare('SELECT * FROM products ORDER BY id DESC').all();
+      const products = db.prepare("SELECT p.*, (SELECT COUNT(*) FROM click_events c WHERE c.product_id=p.id AND c.created_at>=datetime('now','-7 days')) AS measured_clicks FROM products p ORDER BY p.id DESC").all().map(p=>({...p,clicks:p.measured_clicks}));
       return sendJson(res, 200, products);
     }
 
@@ -919,8 +885,8 @@ const server = http.createServer(async (req, res) => {
         affiliate_link,
         badge || 'Indicado',
         sales_count || '1,2 mil vendidos',
-        rating || 4.8,
-        shop_name || 'Loja Verificada na Shopee',
+        rating || null,
+        shop_name || 'Confira a loja no anúncio',
         video_url || null
       );
 
@@ -948,7 +914,7 @@ const server = http.createServer(async (req, res) => {
     <!-- OpenGraph Tags para visualizaÃ§Ã£o no WhatsApp e Redes Sociais -->
     <meta property="og:type" content="product" />
     <meta property="og:title" content="${escapeHtml(product.title)}" />
-    <meta property="og:description" content="ðŸ”¥ Por apenas R$ ${product.price_discount.toFixed(2).replace('.', ',')} na Shopee Oficial! â­ ${product.rating || '4.8'} â€¢ Loja: ${escapeHtml(product.shop_name || 'Verificada na Shopee')}" />
+    <meta property="og:description" content="ðŸ”¥ Por apenas R$ ${product.price_discount.toFixed(2).replace('.', ',')} na Shopee Oficial! â­ ${product.rating || 'Não informada'} â€¢ Loja: ${escapeHtml(product.shop_name || 'Verificada na Shopee')}" />
     <meta property="og:image" content="${product.image_url}" />
     <meta property="og:image:secure_url" content="${product.image_url}" />
     <meta property="og:image:width" content="600" />
@@ -978,7 +944,7 @@ const server = http.createServer(async (req, res) => {
     // ==========================================
     // ARQUIVOS ESTÃTICOS
     // ==========================================
-    let filePath = path.join(PUBLIC_DIR, pathname === '/' ? 'index.html' : pathname);
+    let filePath = path.join(PUBLIC_DIR, pathname === '/' ? 'index.html' : ['/vip','/grupo'].includes(pathname) ? 'vip.html' : pathname === '/admin' ? 'admin.html' : pathname);
     if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
       filePath = path.join(PUBLIC_DIR, 'index.html');
     }
@@ -1001,12 +967,12 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, process.env.HOST || '127.0.0.1', () => {
   console.log(`\n=============================================================`);
-  console.log(`Vitrine Shopee Oficial: http://localhost:${PORT}`);
-  console.log(`Painel Administrativo: http://localhost:${PORT}/admin.html`);
-  console.log(`Busca em Tempo Real com Shopee API: ATIVA`);
-  console.log(`Auto-Cron em Segundo Plano: ATIVO`);
+  console.log(`ShopeeTreasures: http://localhost:${server.address().port}`);
+  console.log(`Painel Administrativo: http://localhost:${server.address().port}/admin.html`);
+  console.log(`Modo: ${SAFE_MODE ? "PRÉVIA COM DADOS FICTÍCIOS" : "API SHOPEE"}`);
+  console.log(`Coleta automática: ${SAFE_MODE ? "DESABILITADA NA PRÉVIA" : "CONFIGURADA"}`);
   console.log(`=============================================================\n`);
 });
 

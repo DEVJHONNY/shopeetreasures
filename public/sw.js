@@ -1,8 +1,10 @@
 // ShopeeTreasures Service Worker
-const CACHE_NAME = 'shopeetreasures-v1.0.2';
+const CACHE_NAME = 'shopeetreasures-v2.0.0';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
+  '/storefront.css',
+  '/campaign.js',
   '/manifest.json',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
@@ -58,30 +60,9 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 1. API calls: Network-first, fallback to cache
-  if (url.pathname.startsWith('/api/')) {
-    event.respondWith(
-      fetch(req)
-        .then((networkRes) => {
-          if (networkRes && networkRes.status === 200) {
-            const clone = networkRes.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(req, clone));
-          }
-          return networkRes;
-        })
-        .catch(async () => {
-          const cached = await caches.match(req);
-          if (cached) return cached;
-          return new Response(
-            JSON.stringify({
-              error: 'offline',
-              message: 'Você está offline. Conecte-se à internet para atualizar as ofertas.',
-              products: []
-            }),
-            { headers: { 'Content-Type': 'application/json' } }
-          );
-        })
-    );
+  // Preços, dados administrativos e redirecionamentos nunca usam cache offline.
+  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/r/') || url.pathname.startsWith('/admin')) {
+    event.respondWith(fetch(req).catch(() => new Response(JSON.stringify({error:'offline',message:'Conecte-se para consultar dados atualizados.'}), {status:503,headers:{'Content-Type':'application/json'}})));
     return;
   }
 

@@ -7,3 +7,15 @@ wa_session/
 *.zip
 *.db
 .netlify/
+
+.env
+.env.*
+!.env.example
+*.db
+*.db-*
+wa_session/
+baileys_auth_info/
+*.lockfile
+backups/
+
+.habblaud-bot.json*

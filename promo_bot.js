@@ -1,9 +1,10 @@
+const { formatOffer } = require('./lib/offers');
 const fs = require('fs');
 const path = require('path');
 const shopeeApi = require('./shopee_api');
 const db = require('./db');
 
-const OUTPUT_FILE = path.join(__dirname, 'promo_output.json');
+const OUTPUT_FILE = process.env.SHOPEE_PROMO_PATH || path.join(__dirname, 'promo_output.json');
 
 /**
  * Formata número para moeda brasileira (R$ 00,00)
@@ -64,7 +65,7 @@ async function fetchPromoOffers({
         const priceCurrent = parseFloat(item.priceMin || item.priceMax || 0);
 
         // Filtro estrito: Avaliação >= 4.8 e Desconto >= 30%
-        if (rating >= minRating && discount >= minDiscount && priceCurrent > 0) {
+        if (rating >= minRating && discount >= minDiscount && discount < 100 && priceCurrent > 0) {
           seenIds.add(item.itemId);
           seenNames.add(item.productName);
 
@@ -78,8 +79,9 @@ async function fetchPromoOffers({
 
           qualifiedOffers.push({
             itemId: item.itemId,
+            checked_at: new Date().toISOString(),
             productName: item.productName,
-            shopName: item.shopName || 'Loja Verificada na Shopee',
+            shopName: item.shopName || null,
             priceCurrent,
             originalPrice,
             savings,
@@ -110,41 +112,7 @@ async function fetchPromoOffers({
 /**
  * Formata mensagem individual otimizada para WhatsApp
  */
-function formatWhatsAppMessage(prod) {
-  const priceDe = formatCurrency(prod.originalPrice);
-  const pricePor = formatCurrency(prod.priceCurrent);
-  const economia = formatCurrency(prod.savings);
-
-  const lines = [
-    `🔥 *ACHADINHO IMPERDÍVEL NA SHOPEE* 🔥`,
-    ``,
-    `📦 *${prod.productName}*`,
-    ``,
-    `⭐ Avaliação: *${prod.ratingStar}* / 5.0 (${prod.salesCount})`,
-    `🏪 Loja: *${prod.shopName}*`
-  ];
-
-  if (priceDe) {
-    lines.push(`❌ De: ~R$ ${priceDe}~`);
-  }
-  lines.push(`✅ *Por apenas: R$ ${pricePor}*`);
-  if (prod.discountPct) {
-    lines.push(`💥 *Desconto: ${prod.discountPct}% OFF*`);
-  }
-  if (prod.savings > 0) {
-    lines.push(`💰 *Economia de: R$ ${economia}*`);
-  }
-
-  lines.push(
-    ``,
-    `🛒 *COMPRE NO LINK OFICIAL COM DESCONTO:*`,
-    `👉 ${prod.offerLink}`,
-    ``,
-    `💎 *Shopee Oficial | Oferta Verificada*`
-  );
-
-  return lines.join('\n');
-}
+function formatWhatsAppMessage(prod) { return formatOffer(prod); }
 
 /**
  * Formata mensagem resumo (Digest) com o TOP 10 de achadinhos
@@ -237,6 +205,7 @@ async function generatePromos(options = {}) {
         p.id = exists.id;
       }
     }
+    for (const p of products) if (p.id) db.prepare('UPDATE products SET source_item_id=?,checked_at=? WHERE id=?').run(String(p.itemId),p.checked_at,p.id);
     console.log(`[PromoBot] ${importedToDb} novos achadinhos adicionados à vitrine do site.`);
   } catch (dbErr) {
     console.warn('[PromoBot] Erro ao sincronizar com banco:', dbErr.message);

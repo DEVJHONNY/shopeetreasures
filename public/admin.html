@@ -288,7 +288,7 @@
 
       <form id="loginForm" onsubmit="handleLogin(event)">
         <div class="form-group" style="text-align: left; margin-bottom: 1.25rem;">
-          <label>Senha:</label>
+          <label for="loginPassword">Senha:</label>
           <input type="password" id="loginPassword" placeholder="Digite sua senha de acesso" required autofocus>
         </div>
         <button type="submit" class="btn btn-primary" style="width: 100%;">
@@ -302,7 +302,7 @@
     <div class="brand">
       <i class="fa-solid fa-gem"></i>
       <span>ShopeeTreasures | Gestão de Afiliado</span>
-      <span class="api-badge"><i class="fa-solid fa-check"></i> API Shopee Conectada</span>
+      <span class="api-badge"><i class="fa-solid fa-check"></i> Painel de gestão</span>
     </div>
     <div style="display: flex; gap: 0.75rem;">
       <a href="/" target="_blank" class="btn btn-outline" style="font-size: 0.85rem; padding: 0.4rem 0.8rem;">
@@ -333,7 +333,7 @@
         </div>
         <div>
           <div class="stat-val" id="statClicks">0</div>
-          <div class="stat-label">Cliques Totais Rastreados</div>
+          <div class="stat-label">Cliques registrados • últimos 7 dias</div>
         </div>
       </div>
 
@@ -352,8 +352,8 @@
           <i class="fa-solid fa-hand-holding-dollar"></i>
         </div>
         <div>
-          <div class="stat-val" style="color: #047857;" id="statEstCommission">R$ 0,00</div>
-          <div class="stat-label">Comissão Estimada (~8%)</div>
+          <div class="stat-val" style="color: #047857;" id="statEstCommission">Consultar Shopee</div>
+          <div class="stat-label">Comissões aprovadas • painel Shopee</div>
         </div>
       </div>
     </div>
@@ -364,7 +364,7 @@
         <div class="panel-header">
           <div class="panel-title">
             <i class="fa-solid fa-chart-simple" style="color: var(--primary);"></i>
-            Top Produtos Mais Clicados (Conversão)
+            Produtos com cliques registrados
           </div>
         </div>
         <div style="height: 240px; position: relative;">
@@ -393,12 +393,12 @@
           Atualização Automática em Segundo Plano (Auto-Cron)
         </div>
         <span class="badge-status" id="cronStatusBadge">
-          <i class="fa-solid fa-circle-dot"></i> Ativo no Sistema
+          <i class="fa-solid fa-circle-dot"></i> Consultar status
         </span>
       </div>
 
       <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1.25rem;">
-        O servidor busca novas ofertas virais e atualiza os preços e estoques diretamente da API da Shopee sem nenhuma necessidade de intervenção manual.
+        O servidor local pode consultar novas ofertas nos intervalos configurados. No Netlify, as consultas ocorrem ao abrir a vitrine. Confira o preço final no anúncio.
       </p>
 
       <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 1rem; align-items: flex-end;">
@@ -466,7 +466,7 @@
       </div>
 
       <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1rem;">
-        O robô varre a Shopee Open API buscando apenas produtos com avaliação 4.8 ou superior e descontos de até 85%, calculando a economia e formatando as mensagens com seu link de afiliado prontas para disparo.
+        O robô varre a Shopee Open API buscando apenas produtos com avaliação 4.8 ou superior e descontos informados de pelo menos 30%, calculando a economia e formatando as mensagens com seu link de afiliado prontas para disparo.
       </p>
 
       <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; margin-bottom: 1rem;">
@@ -489,7 +489,7 @@
       <div class="panel-header">
         <div class="panel-title">
           <i class="fa-solid fa-robot" style="color: #10b981; font-size: 1.25rem;"></i>
-          Robô de Disparo 100% Automático no WhatsApp (Opção 2)
+          Programação de ofertas no WhatsApp
         </div>
         <div id="waStatusBadge" style="display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; font-weight: 700; padding: 0.35rem 0.75rem; border-radius: 9999px; background: #f1f5f9; color: #64748b;">
           <span style="width: 8px; height: 8px; border-radius: 50%; background: #94a3b8;"></span> Desconectado
@@ -497,7 +497,7 @@
       </div>
 
       <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1.25rem;">
-        Conecte seu WhatsApp lendo o QR Code abaixo uma única vez. Com o robô conectado, as ofertas serão enviadas <b>100% sozinhas diretamente dentro do seu grupo</b> com foto, desconto e seu link oficial.
+        No painel local, conecte seu WhatsApp e confira o grupo de destino. Escolha o intervalo e, se quiser, filtre as categorias antes de ativar. A conexão pode exigir nova leitura do QR Code.
       </p>
 
       <!-- QR Code / Connection Box -->
@@ -547,25 +547,17 @@
       </div>
 
       <!-- Schedule & Automation Controls -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; align-items: flex-end; margin-bottom: 1.25rem;">
-        <div class="form-group" style="margin: 0;">
-          <label>Intervalo entre os Envios:</label>
-          <select id="waAutoInterval" onchange="updateWhatsAppConfig()">
-            <option value="30">A cada 30 minutos (Modo Acelerado)</option>
-            <option value="60" selected>A cada 1 hora (Recomendado - Anti-spam)</option>
-            <option value="120">A cada 2 horas (Discreto)</option>
-            <option value="240">A cada 4 horas</option>
-          </select>
-        </div>
-
-        <div class="form-group" style="margin: 0;">
-          <label>Status do Disparo Automático:</label>
-          <select id="waAutoEnabled" onchange="updateWhatsAppConfig()" style="font-weight: 700;">
-            <option value="0">⏸️ Pausado (Envio Manual Apenas)</option>
-            <option value="1">▶️ Ativado (Robô posta sozinho)</option>
-          </select>
-        </div>
+      <p id="campaignNotice" role="status">Envio por intervalo. Sem categorias selecionadas, o bot pesquisa todas as categorias disponíveis.</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:1rem;margin:1rem 0">
+        <label>Intervalo entre envios (minutos)<input id="waIntervalMinutes" type="number" min="15" max="1440" value="15"></label>
+        <p>Um envio a cada intervalo, enquanto o servidor estiver ligado e houver uma oferta adequada. Sem limite diário neste modo.</p>
+        <label>Categorias (até três)<select id="waCategories" multiple size="6">
+          <option>Casa &amp; Cozinha</option><option>Beleza</option><option>Eletrônicos</option><option>Moda</option><option>Acessórios</option><option>Bebês &amp; Crianças</option>
+        </select></label>
+        <label>Envio automático<select id="waAutoEnabled"><option value="0">Pausado</option><option value="1">Ativado por intervalo</option></select></label>
       </div>
+      <button class="btn btn-primary" onclick="updateWhatsAppConfig()">Salvar programação</button>
+      <p style="margin:12px 0">O primeiro envio aguarda um intervalo completo após ativar ou salvar. Períodos desligados não acumulam mensagens. Uma tentativa com falha não é repetida imediatamente.</p>
 
       <!-- Live Dispatched Feed -->
       <div style="background: #ffffff; border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem;">
@@ -738,6 +730,7 @@
           document.getElementById('cronLastSyncText').value = `${date.toLocaleDateString('pt-BR')} às ${date.toLocaleTimeString('pt-BR')}`;
         }
 
+        const badge=document.getElementById('cronStatusBadge'); if(badge)badge.textContent=data.mode==='on_demand'?'Consulta ao abrir':data.enabled===false?'Pausado':'Configurado no servidor local';
         const statEl = document.getElementById('statNextSync');
         if (statEl) {
           if (status.nextSync) {
@@ -827,11 +820,15 @@
         const qrImg = document.getElementById('waQrImage');
         const connInfo = document.getElementById('waConnectedInfo');
 
+        if (data.intervalMinutes && !window.campaignDirty) document.getElementById('waIntervalMinutes').value=data.intervalMinutes;
+        
+        if (data.categories && !window.campaignDirty) for(const o of document.getElementById('waCategories').options)o.selected=data.categories.includes(o.value);
+        document.getElementById('campaignNotice').textContent = data.status==='unavailable' ? data.message : data.safeMode ? 'PRÉVIA ISOLADA: nenhum envio ou conexão com WhatsApp.' : data.needsCategories ? 'Escolha ao menos uma categoria para liberar os envios automáticos.' : 'Intervalo de '+(data.intervalMinutes||15)+' minutos. '+(data.nextAutomaticAt?'Próxima tentativa a partir de '+new Date(data.nextAutomaticAt).toLocaleTimeString('pt-BR')+'.':'Envio automático pausado.');
         // Update Auto-post form fields
         if (document.getElementById('waAutoInterval')) {
           document.getElementById('waAutoInterval').value = data.intervalMinutes || 60;
         }
-        if (document.getElementById('waAutoEnabled')) {
+        if (document.getElementById('waAutoEnabled') && !window.campaignDirty) {
           document.getElementById('waAutoEnabled').value = data.isAutoPostEnabled ? '1' : '0';
         }
 
@@ -963,7 +960,9 @@
     }
 
     async function updateWhatsAppConfig() {
-      const interval = parseInt(document.getElementById('waAutoInterval').value, 10);
+      const intervalMinutes = Number(document.getElementById('waIntervalMinutes').value);
+      
+      const categories = Array.from(document.getElementById('waCategories').selectedOptions).map(o=>o.value);
       const enabled = document.getElementById('waAutoEnabled').value === '1';
 
       try {
@@ -973,13 +972,14 @@
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + authToken
           },
-          body: JSON.stringify({ autoPostEnabled: enabled, intervalMinutes: interval })
+          body: JSON.stringify({ autoPostEnabled: enabled, mode:'interval', intervalMinutes, categories })
         });
         const data = await res.json();
         if (data.success) {
-          alert(`Configuração salva!\nDisparo automático: ${enabled ? 'ATIVADO' : 'PAUSADO'}\nIntervalo: a cada ${interval} minutos.`);
+          window.campaignDirty=false;
+          alert(`Configuração salva!\nDisparo automático: ${enabled ? 'ATIVADO' : 'PAUSADO'}\nHorários: ${slots.join(", ")} • até ${maxDaily} por dia.`);
           loadWhatsAppBotStatus();
-        }
+        } else { alert(data.error || 'Não foi possível salvar.'); }
       } catch (e) {
         alert('Erro ao atualizar configuração: ' + e.message);
       }
@@ -1072,7 +1072,7 @@
         const origPriceFmt = origPrice > 0 ? `R$ ${origPrice.toFixed(2).replace('.', ',')}` : '';
         const discFmt = discountPct > 0 ? `-${discountPct}% OFF` : '';
         const imgUrl = p.image_url || p.imageUrl || '';
-        const rating = p.rating || p.ratingStar || '4.8';
+        const rating = p.rating || p.ratingStar || 'Não informada';
         const sales = p.sales_count || p.salesCount || 'Destaque Oficial';
         const shop = p.shop_name || p.shopName || 'Loja Shopee';
         const affLink = p.affiliate_link || p.offerLink || '';
@@ -1310,12 +1310,13 @@
       allAdminProducts = products || [];
       const totalClicks = allAdminProducts.reduce((acc, p) => acc + (p.clicks || 0), 0);
       const totalGross = allAdminProducts.reduce((acc, p) => acc + (parseFloat(p.price_discount) || 0), 0);
-      const estCommission = totalGross * 0.08; // Estimativa de 8% média Shopee Afiliados
+      const clicksAvailable = allAdminProducts.every(p => p.clicks !== null);
       
       document.getElementById('statProducts').textContent = allAdminProducts.length;
-      document.getElementById('statClicks').textContent = totalClicks.toLocaleString('pt-BR');
+      document.getElementById('statClicks').textContent = clicksAvailable ? totalClicks.toLocaleString('pt-BR') : 'Indisponível';
+      loadRealAnalytics();
       document.getElementById('statGrossValue').textContent = 'R$ ' + totalGross.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      document.getElementById('statEstCommission').textContent = 'R$ ' + estCommission.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      document.getElementById('statEstCommission').textContent = 'Consultar Shopee';
 
       renderCrmCharts(allAdminProducts);
       renderCategoryFilterBar();
@@ -1349,7 +1350,7 @@
           </td>
           <td>
             <span class="badge-status">
-              <i class="fa-solid fa-arrow-pointer"></i> ${p.clicks || 0} cliques
+              <i class="fa-solid fa-arrow-pointer"></i> ${p.clicks == null ? 'Cliques indisponíveis' : p.clicks + ' cliques'}
             </span>
           </td>
           <td>
@@ -1633,7 +1634,7 @@
           currentPromoData = data;
           renderPromoSection(data);
           loadAdminData();
-          alert(`✅ Sucesso! ${data.total_products || data.products.length} novas ofertas reais (avaliação 4.8+ e descontos de até 85%) foram obtidas na Shopee Open API e formatadas.`);
+          alert(`✅ Sucesso! ${data.total_products || data.products.length} novas ofertas reais (avaliação 4.8+ e descontos informados de pelo menos 30%) foram obtidas na Shopee Open API e formatadas.`);
         } else {
           alert('Aviso: ' + (data.error || 'Nenhum resultado retornado.'));
         }
@@ -1660,5 +1661,7 @@
 
     window.addEventListener('load', checkAuth);
   </script>
+<script src="/admin-campaign.js"></script>
+<script>for(const id of ['waIntervalMinutes','waCategories','waAutoEnabled'])document.getElementById(id)?.addEventListener('input',()=>{window.campaignDirty=true;});</script>
 </body>
 </html>
