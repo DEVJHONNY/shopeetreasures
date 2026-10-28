@@ -1,8 +1,9 @@
 const { formatOffer, normalizeOffer } = require('./lib/offers');
-const { validateConfig, dueSlot, clockParts, KEYWORDS, ZONE } = require('./lib/schedule');
+const { validateConfig, dueSlot, clockParts, KEYWORDS, CATEGORIES, ZONE } = require('./lib/schedule');
 const crypto = require('node:crypto');
 const SAFE_MODE = process.env.SHOPEE_SAFE_MODE === '1';
 let dispatchInFlight = false, lastAutoAttempt = 0, lockOwned = false;
+let publishMonitor = () => {};
 let makeWASocket, useMultiFileAuthState, DisconnectReason, pino, QRCode;
 
 
@@ -127,7 +128,7 @@ async function initWhatsApp(forceNew = false) {
         console.log(`[WhatsApp Bot] ✅ Conectado com sucesso ao WhatsApp como ${connectedUser.name || connectedUser.id}`);
 
         // Try resolving group JID with saved group link
-        const savedLink = getBotSetting('whatsapp_link', 'https://chat.whatsapp.com/KjHrqfJp3HuIHQiR8Zfl3L');
+        const savedLink = getBotSetting('whatsapp_link', '');
         await resolveGroupJid(savedLink);
       }
 
@@ -188,13 +189,14 @@ function formatProductOffer(product) { return formatOffer(product); }
 
 // Dispatch an offer to WhatsApp
 function campaignConfig() {
-  return validateConfig({slots: JSON.parse(getBotSetting('wa_slots','["12:00","19:00"]')), categories: JSON.parse(getBotSetting('wa_categories','[]')), maxDaily: Number(getBotSetting('wa_max_daily','2'))});
+  return validateConfig({mode:getBotSetting('wa_schedule_mode','slots'),intervalMinutes:Number(getBotSetting('wa_auto_post_interval_min','15')),anchor:Math.max(Number(getBotSetting('wa_interval_anchor','0')),lastPostTimestamp),slots: JSON.parse(getBotSetting('wa_slots','["12:00","19:00"]')), categories: JSON.parse(getBotSetting('wa_categories','[]')), maxDaily: Number(getBotSetting('wa_max_daily','2'))});
 }
 async function dispatchOffer(specificProduct = null, isManual = false, scheduled = null) {
   if (SAFE_MODE) throw new Error('Prévia isolada: nenhum envio é permitido.');
   if (dispatchInFlight) throw new Error('Já existe um envio em andamento.');
   if (connectionStatus !== 'connected' || !sock) throw new Error('WhatsApp desconectado.');
   dispatchInFlight = true;
+  lastError=null;publishMonitor();
   let attemptId = null;
   try {
     if (!targetGroupJid) await resolveGroupJid(getBotSetting('whatsapp_link',''));
@@ -203,8 +205,8 @@ async function dispatchOffer(specificProduct = null, isManual = false, scheduled
     const api = require('./shopee_api');
     let product = specificProduct;
     if (!product) {
-      if (!config.categories.length) throw new Error('Escolha as categorias antes de gerar o envio.');
-      const fresh = await require('./promo_bot').generatePromos({keywords:config.categories.flatMap(c=>KEYWORDS[c]),targetCount:15});
+      if (config.mode!=='interval'&&!config.categories.length) throw new Error('Escolha as categorias antes de gerar o envio.');
+      const fresh = await require('./promo_bot').generatePromos({keywords:(config.categories.length?config.categories:CATEGORIES).flatMap(c=>KEYWORDS[c]),targetCount:15});
       const recent = new Set(db.prepare('SELECT source_key FROM dispatch_history WHERE created_at > ?').all(Date.now()-7*86400000).map(r=>r.source_key));
       product = fresh.products.find(p=>!recent.has('item:'+String(p.itemId)));
       if (!product) throw new Error('Não há oferta nova adequada. O envio será pulado.');
@@ -219,7 +221,7 @@ async function dispatchOffer(specificProduct = null, isManual = false, scheduled
     const sourceKey = 'item:'+String(product.itemId || normalized.source_item_id);
     const day = clockParts().day, slot = scheduled?.slot || 'manual-'+crypto.randomUUID();
     if (scheduled) {
-      const due = dueSlot(config, db.prepare('SELECT day_key,slot,kind FROM dispatch_history WHERE day_key=?').all(day));
+      const due = dueSlot(config, db.prepare('SELECT day_key,slot,kind,created_at FROM dispatch_history WHERE created_at>=?').all(Date.now()-172800000));
       if (!due || due.slot !== scheduled.slot) throw new Error('Horário já atendido ou fora da janela.');
     }
     const record = db.prepare('INSERT OR IGNORE INTO dispatch_history(source_key,title,day_key,slot,kind,status,created_at) VALUES(?,?,?,?,?,?,?)').run(sourceKey,normalized.title,day,slot,scheduled?'automatic':'manual','pending',Date.now());
@@ -234,9 +236,10 @@ async function dispatchOffer(specificProduct = null, isManual = false, scheduled
     dispatchedLog.unshift(entry);if(dispatchedLog.length>50)dispatchedLog.pop();
     return {success:true,product:entry};
   } catch(error) {
+    lastError=error.message;
     if(attemptId) db.prepare("UPDATE dispatch_history SET status='failed' WHERE id=?").run(attemptId);
     throw error;
-  } finally { dispatchInFlight=false; }
+  } finally { dispatchInFlight=false;publishMonitor(); }
 }
 
 // Enviar enquete interativa nativa do WhatsApp no grupo VIP
@@ -247,7 +250,7 @@ async function dispatchPoll({ name, values, selectableCount = 0 } = {}) {
   }
 
   if (!targetGroupJid) {
-    const savedLink = getBotSetting('whatsapp_link', 'https://chat.whatsapp.com/KjHrqfJp3HuIHQiR8Zfl3L');
+    const savedLink = getBotSetting('whatsapp_link', '');
     await resolveGroupJid(savedLink);
   }
 
@@ -305,20 +308,27 @@ function startSchedulerLoop() {
     if(!isAutoPostEnabled||connectionStatus!=='connected'||dispatchInFlight||Date.now()-lastAutoAttempt<120000)return;
     try {
       const config=campaignConfig(),day=clockParts().day;
-      const due=dueSlot(config,db.prepare('SELECT day_key,slot,kind FROM dispatch_history WHERE day_key=?').all(day));
+      const due=dueSlot(config,db.prepare('SELECT day_key,slot,kind,created_at FROM dispatch_history WHERE created_at>=?').all(Date.now()-172800000));
       if(!due)return;
       lastAutoAttempt=Date.now();
       await dispatchOffer(null,false,due);
-    } catch(error) {lastError=error.message;console.warn('[Agendamento]',error.message);}
+    } catch(error) {
+      lastError=error.message;
+      if(campaignConfig().mode==='interval')setBotSetting('wa_interval_anchor',Date.now());
+      publishMonitor();console.warn('[Agendamento]',error.message);
+    }
   },30000);
 }
 
 // Todas as opções são validadas antes da gravação.
 function setConfig(input) {
   const cfg=validateConfig({...campaignConfig(),...input});
-  if(input.autoPostEnabled===true&&!cfg.categories.length)throw new Error('Escolha ao menos uma categoria.');
+  if(input.autoPostEnabled===true&&cfg.mode!=='interval'&&!cfg.categories.length)throw new Error('Escolha ao menos uma categoria.');
   db.exec('BEGIN');
   try {
+    setBotSetting('wa_schedule_mode',cfg.mode);
+    setBotSetting('wa_auto_post_interval_min',cfg.intervalMinutes);
+    if(input.autoPostEnabled===true||input.intervalMinutes!==undefined||input.mode!==undefined)setBotSetting('wa_interval_anchor',Date.now());
     setBotSetting('wa_slots',JSON.stringify(cfg.slots));
     setBotSetting('wa_categories',JSON.stringify(cfg.categories));
     setBotSetting('wa_max_daily',cfg.maxDaily);
@@ -335,17 +345,24 @@ function getStatus() {
     ...campaignConfig(),
     timezone: ZONE,
     safeMode: SAFE_MODE,
-    needsCategories: !campaignConfig().categories.length,
+    needsCategories: campaignConfig().mode!=='interval'&&!campaignConfig().categories.length,
     status: SAFE_MODE ? 'safe_preview' : connectionStatus,
     qrCode: currentQrCodeDataUrl,
     user: connectedUser,
     targetGroupJid: targetGroupJid,
     isAutoPostEnabled: isAutoPostEnabled,
-    intervalMinutes: autoPostIntervalMin,
+    intervalMinutes: campaignConfig().intervalMinutes,
+    nextAutomaticAt: isAutoPostEnabled&&campaignConfig().mode==='interval' ? Math.max(campaignConfig().anchor,Number(db.prepare("SELECT MAX(created_at) AS at FROM dispatch_history WHERE kind='automatic'").get()?.at)||0)+campaignConfig().intervalMinutes*60000 : null,
+    dispatchInFlight,
     lastPostTimestamp: lastPostTimestamp,
     lastError: lastError,
     dispatchedLog: dispatchedLog.slice(0, 15)
   };
+}
+
+// Local monitor publishes only operational state, never QR, credentials or group identifiers.
+if(!SAFE_MODE&&process.env.SHOPEE_HABBLAUD_MONITOR==='1') {
+  publishMonitor=require('./lib/bot-monitor').startMonitor(()=>getStatus(),path.join(__dirname,'.habblaud-bot.json'));
 }
 
 // Auto-start WhatsApp connection if saved session exists

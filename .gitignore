@@ -17,3 +17,5 @@ wa_session/
 baileys_auth_info/
 *.lockfile
 backups/
+
+.habblaud-bot.json*

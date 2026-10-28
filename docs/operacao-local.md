@@ -1,27 +1,21 @@
-# Operação local atualizada
+# Bot por intervalo e personagem no Habblaud
 
-O servidor e o painel ficam na mesma pasta `shopee-afiliados`. Execute o atalho `iniciar-shopee.bat` na pasta antigravity e acesse http://127.0.0.1:4000/admin. Mantenha apenas uma instância do servidor.
+Execute `iniciar-shopee.bat` em antigravity. O atalho abre o painel se o servidor já estiver ligado e inicia uma instância se estiver desligado. Painel: http://127.0.0.1:4000/admin. Use sua senha existente.
 
-## Primeira ativação
+## Envio automático
 
-1. Entre com sua senha administrativa existente.
-2. Escolha uma ou duas categorias com base no interesse do grupo.
-3. Comece com os horários 12:00 e 19:00, limite de dois envios automáticos por dia (São Paulo).
-4. Confira a conexão WhatsApp e o grupo de destino no painel.
-5. Ative o agendamento somente depois dessa conferência. A instalação deixa os envios pausados.
+O modo por intervalo envia uma oferta a cada 15 minutos, enquanto o servidor estiver ligado, o WhatsApp conectado e houver uma oferta adequada. Ele não usa os antigos horários de 12h/19h nem o limite de dois envios por dia. O painel permite pausar ou alterar o intervalo (mínimo de 15 minutos).
 
-O bot revalida o produto antes do envio, registra tentativas para não repetir um horário e evita repetir o mesmo produto em sete dias. O computador e o servidor precisam ficar ligados. Cliques não comprovam vendas; a comissão deve ser conferida no painel de afiliados Shopee.
+Ativar ou salvar a programação inicia a espera de um intervalo completo. Desligar e religar não acumula mensagens atrasadas. Tentativas registradas no banco impedem duplicar um intervalo; uma falha ambígua de rede não provoca um reenvio imediato. O mesmo produto é evitado por sete dias na seleção automática.
 
-## Habblaud
+Categorias são opcionais neste modo: sem seleção, o bot pesquisa todas as categorias disponíveis. Quando há categorias selecionadas, a busca respeita esse filtro. Preço, disponibilidade e link são revalidados antes de enviar.
 
-Abra `iniciar-habblaud.bat` para iniciar o escritório. O novo `iniciar-habblaud-agente.bat` confere a integração nativa e abre o escritório; substitui o simulador antigo. O código desse atalho está em `scripts/iniciar-habblaud-agente.bat`.
+## Personagem local no Habblaud
 
-O Habblaud lê sessões reais do Codex automaticamente. Os hooks adicionais dependem da aprovação de confiança pelo usuário em `/hooks` no Codex; o instalador não concede essa confiança. Para remover somente os hooks do Habblaud, execute `npm run codex:uninstall` na pasta habblaud.
+O Bot de Ofertas aparece em um cartão com personagem dentro do escritório: conectado/aguardando, preparando ou enviando oferta, pausado, desconectado ou com falha. O estado vem do processo real do bot, atualizado a cada três segundos, e é marcado como indisponível quando deixa de atualizar. O personagem não se passa por Claude/Codex, não recebe mensagens e não entra nas métricas de agentes de IA nem no Habblaud World.
 
-## Arquivos privados e recuperação
+Configure `SHOPEE_HABBLAUD_MONITOR=1` no `.env` local. O arquivo `.habblaud-bot.json` contém apenas estado operacional e horários; não contém senha, QR Code, telefone, convite ou identificador do grupo. Ele é ignorado pelo Git.
 
-As chaves ficam em `.env`, ignorado pelo Git. Banco, sessão WhatsApp e arquivos de execução não devem ser enviados ao GitHub. Antes desta instalação foi criado um backup íntegro em `antigravity/backups`. A senha administrativa foi preservada.
+A extensão do Habblaud está versionada em `integrations/habblaud`. Instalação na pasta irmã: `python integrations/habblaud/install.py`; depois execute `npm run build` no Habblaud e reinicie o escritório. O instalador não altera permissões, sessões de IA nem o código do World.
 
-Para recuperar o banco, encerre o servidor antes de substituir `shopee.db` pela cópia escolhida. Não restaure banco com o servidor ativo. A versão de código anterior continua no branch `main`; preserve arquivos locais antes de trocar branches.
-
-O Netlify acompanha o GitHub. Instalar esta branch local não publica automaticamente a revisão em produção; a revisão #1 permanece separada até ser integrada ao branch de publicação.
+As chaves ficam no `.env`, e banco e sessão WhatsApp permanecem privados. A produção Netlify só muda quando a revisão do GitHub for integrada à branch de publicação.
